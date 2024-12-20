@@ -1,0 +1,3 @@
+[workspace]
+members = ["backend/libs/*", "backend/bin", "backend/bindings_generator"]
+resolver = "2"

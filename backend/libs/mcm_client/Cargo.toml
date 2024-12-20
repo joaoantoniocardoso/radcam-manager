@@ -1,0 +1,25 @@
+[package]
+name = "mcm_client"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "mcm_client"
+path = "src/mod.rs"
+bench = false
+
+[dependencies]
+web_client = { path = "../web_client" }
+
+anyhow = "1.0.95"
+indexmap = { version = "2.7.0", features = ["serde"] }
+once_cell = "1.20.2"
+semver = "1.0.24"
+serde = { version = "1.0.217", features = ["rc"] }
+serde_derive = "1.0.217"
+serde_repr = "0.1.19"
+serde_json = "1.0.135"
+tokio = { version = "1.43.0", features = ["full"] }
+tracing = "0.1.41"
+url = { version = "2.5.4", features = ["serde"] }
+uuid = { version = "1.11.1", features = ["v5", "serde"] }

@@ -1,0 +1,48 @@
+name: Deploy BlueOS Extension Image
+
+on:
+  push:
+  # Run manually
+  workflow_dispatch:
+  # NOTE: caches may be removed if not run weekly
+  #  -> may be worth scheduling for every 6 days
+
+jobs:
+  deploy-docker-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use cached dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "${{ hashFiles('**/Cargo.lock') }}"
+          shared-key: "shared"
+      
+      - name: Install build dependencies - Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl,armv7-unknown-linux-musleabihf
+        
+      - name: Install build dependencies - Cross
+        run: cargo install cross
+
+      - name: Install build dependencies - NPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: "*"
+          cache-dependency-path: 'frontend/package-lock.json'
+          cache: 'npm'
+
+      - name: Cross-build
+        run: ./build_cross.sh
+
+      - name: Deploy BlueOS Extension
+        uses: BlueOS-community/Deploy-BlueOS-Extension@v1.0.1
+        with:
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: 'radcam-manager'

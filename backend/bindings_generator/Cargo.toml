@@ -1,0 +1,16 @@
+[package]
+name = "bindings"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "bindings"
+path = "src/main.rs"
+bench = false
+
+[dependencies]
+radcam_commands = { path="../libs/radcam_commands" }
+
+anyhow = "1.0.95"
+ts-rs = { version = "10.1.0", features = ["serde_json", "no-serde-warnings"] }
+regex = "1.11.1"
