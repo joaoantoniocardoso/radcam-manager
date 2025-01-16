@@ -65,7 +65,7 @@ pub struct StreamInformation {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum CaptureConfiguration {
     Video(VideoCaptureConfiguration),
-    Unknown(String),
+    Redirect(serde_json::Value),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
