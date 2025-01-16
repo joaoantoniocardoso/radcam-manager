@@ -33,6 +33,6 @@ LABEL type="device-integration"
 LABEL readme='https://raw.githubusercontent.com/bluerobotics/radcam-manager/{tag}/README.md'
 LABEL links='{ "website": "https://raw.githubusercontent.com/bluerobotics/radcam-manager/", "support": "https://raw.githubusercontent.com/bluerobotics/radcam-manager/" }'
 LABEL tags='[ "rov", "camera" "cam" "radcam" "control" ]'
-LABEL requirements="core >= 1.4"
+LABEL requirements='[ "core >= 1.4", "cockpit >= 1.7" ]'
 
 ENTRYPOINT ["./radcam-manager", "--web-server", "0.0.0.0:8080", "--mcm-address", "blueos.internal:6020"]
