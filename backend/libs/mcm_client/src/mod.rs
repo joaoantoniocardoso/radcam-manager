@@ -7,12 +7,13 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::RwLock, task::JoinHandle};
 use tracing::*;
+use ts_rs::TS;
 use url::Url;
 use uuid::Uuid;
 
 // note: keep this private to isolate MCM API from the rest of the code
 pub(crate) mod mcm_client;
-pub(crate) mod mcm_types;
+pub mod mcm_types;
 
 static MANAGER: OnceCell<RwLock<Manager>> = OnceCell::new();
 
@@ -23,7 +24,7 @@ struct Manager {
 
 pub type Cameras = IndexMap<Uuid, Camera>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, TS)]
 pub struct Camera {
     pub uuid: Uuid,
     pub hostname: Ipv4Addr,
@@ -31,7 +32,7 @@ pub struct Camera {
     pub streams: Streams,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, TS)]
 pub struct Credentials {
     pub username: String,
     pub password: String,
@@ -39,7 +40,7 @@ pub struct Credentials {
 
 pub type Streams = IndexMap<Uuid, Stream>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, TS)]
 pub struct Stream {
     name: String,
     source_endpoint: Url,
