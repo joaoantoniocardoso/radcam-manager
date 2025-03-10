@@ -15,12 +15,13 @@ struct Manager {
     author = option_env!("CARGO_PKG_AUTHORS").unwrap_or("?"),
     about = option_env!("CARGO_PKG_DESCRIPTION").unwrap_or("?"),
 )]
+
 pub struct Args {
     /// Turns all log categories up to Debug, for more information check RUST_LOG env variable.
     #[arg(short, long)]
     verbose: bool,
 
-    /// Sets the IP and port that the server will be provided
+    /// Sets the IP and port that the server will be provided.
     #[arg(long, default_value = "0.0.0.0:8080")]
     web_server: String,
 
@@ -36,7 +37,7 @@ pub struct Args {
     #[arg(long, default_value = "1", value_names = ["1"])]
     default_api_version: u8,
 
-    /// Sets the Mavlink Camera Manager address
+    /// Sets the Mavlink Camera Manager address.
     #[arg(long, default_value = "127.0.0.1:6020")]
     mcm_address: String,
 }
