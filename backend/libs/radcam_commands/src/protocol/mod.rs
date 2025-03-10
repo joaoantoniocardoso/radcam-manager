@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 pub mod display;
+pub mod video;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Response {

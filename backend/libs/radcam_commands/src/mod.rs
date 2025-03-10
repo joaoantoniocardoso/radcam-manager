@@ -1,8 +1,11 @@
+use std::{future::Future, pin::Pin};
+
 use anyhow::{Context, Result};
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use mcm_client::{get_camera, Camera};
-use protocol::display::{
-    advanced_display::AdvancedParameterSetting, base_display::BaseParameterSetting,
+use protocol::{
+    display::{advanced_display::AdvancedParameterSetting, base_display::BaseParameterSetting},
+    video::video_parameters::VideoParameterSettings,
 };
 use serde::{Deserialize, Serialize};
 use tracing::*;
@@ -14,6 +17,7 @@ use web_client::send_request;
 pub mod protocol;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+// #[tsync] // FIXME: Disabled for now, see https://github.com/Wulf/tsync/issues/58
 pub struct CameraControl {
     #[ts(as = "String")]
     pub camera_uuid: Uuid,
@@ -23,15 +27,24 @@ pub struct CameraControl {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "action", content = "json")]
+// #[tsync] // FIXME: Disabled for now, see https://github.com/Wulf/tsync/issues/58
 pub enum Action {
     #[serde(rename = "getSysConfig")]
     GetSysConfig,
     #[serde(rename = "getImageAdjustment")]
     GetImageAdjustment,
+    #[serde(rename = "getImageAdjustmentEx")]
+    GetImageAdjustmentEx,
+    #[serde(rename = "getVencConf")]
+    GetVideoParameterSettings(VideoParameterSettings),
     #[serde(rename = "setImageAdjustment")]
     SetImageAdjustment(BaseParameterSetting),
     #[serde(rename = "setImageAdjustmentEx")]
     SetImageAdjustmentEx(AdvancedParameterSetting),
+    #[serde(rename = "setVencConf")]
+    SetVideoParameterSettings(VideoParameterSettings),
+    #[serde(rename = "restart")]
+    Restart,
 }
 
 impl std::fmt::Display for Action {
@@ -41,58 +54,89 @@ impl std::fmt::Display for Action {
 }
 
 #[instrument(level = "debug")]
-pub async fn control(camera_control: Json<CameraControl>) -> impl IntoResponse {
-    trace!("Got control query: {camera_control:#?}");
+fn control_inner(
+    camera_control: Json<CameraControl>,
+) -> Pin<Box<dyn Future<Output = Result<serde_json::Value>> + Send>> {
+    Box::pin(async move {
+        debug!("Got control query: {camera_control:#?}");
 
-    let url = match get_camera_api_url(&camera_control.0).await {
-        Ok(url) => url,
+        let action_value = serde_json::to_value(&camera_control.action).unwrap();
+        let action_map = action_value.as_object().unwrap();
+        let payload = action_map
+            .get("json")
+            .map(|value| value.to_string())
+            .unwrap_or_default();
+
+        let url = get_camera_api_url(&camera_control.0).await?;
+
+        debug!("URL: {url}, json: {payload}");
+
+        let res: serde_json::Value =
+            send_request(reqwest::Client::new().post(url), payload).await?;
+
+        debug!("Answer from the camera: {res:#?}");
+
+        let res = match &camera_control.action {
+            Action::SetImageAdjustment(_) => {
+                let mut camera_control = camera_control.0.clone();
+                camera_control.action = Action::GetImageAdjustment;
+
+                control_inner(Json(camera_control)).await
+            }
+            Action::SetImageAdjustmentEx(_) => {
+                let mut camera_control = camera_control.0.clone();
+                camera_control.action = Action::GetImageAdjustmentEx;
+
+                control_inner(Json(camera_control)).await
+            }
+            Action::SetVideoParameterSettings(video_parameters_settings) => {
+                let mut camera_control = camera_control.0.clone();
+                camera_control.action = Action::GetVideoParameterSettings(VideoParameterSettings {
+                    channel: video_parameters_settings.channel.clone(),
+                    ..Default::default()
+                });
+
+                control_inner(Json(camera_control)).await
+            }
+            Action::Restart => {
+                let mut camera_control = camera_control.0.clone();
+                camera_control.action = Action::GetSysConfig;
+                let value = Json(camera_control);
+
+                tokio::time::sleep(tokio::time::Duration::from_secs(15)).await;
+
+                let mut tries = 20;
+                while tries > 0 {
+                    debug!("Waiting for camera to restart...");
+
+                    tries -= 1;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+                    if control_inner(value.clone()).await.is_ok() {
+                        break;
+                    }
+                }
+
+                Ok(res)
+            }
+            _ => Ok(res),
+        }?;
+
+        debug!("res.to_string(): {}", res.to_string());
+
+        Ok(res)
+    })
+}
+
+#[instrument(level = "debug")]
+pub async fn control(camera_control: Json<CameraControl>) -> impl IntoResponse {
+    let res = match control_inner(camera_control).await {
+        Ok(res) => res,
         Err(error) => {
+            warn!("res from send_request: {error:#?}");
             return (StatusCode::INTERNAL_SERVER_ERROR, format!("{error:?}")).into_response();
         }
     };
-
-    let action_value = serde_json::to_value(&camera_control.action).unwrap();
-    let action_map = action_value.as_object().unwrap();
-    let payload = action_map
-        .get("json")
-        .map(|value| value.to_string())
-        .unwrap_or_default();
-
-    trace!("URL: {url}, json: {payload}");
-
-    let mut res: serde_json::Value =
-        match send_request(reqwest::Client::new().post(url), payload).await {
-            Ok(res) => res,
-            Err(error) => {
-                warn!("res from send_request: {error:#?}");
-                return (StatusCode::INTERNAL_SERVER_ERROR, format!("{error:?}")).into_response();
-            }
-        };
-
-    trace!("Answer from the camera: {res:#?}");
-
-    let map = res.as_object().unwrap();
-    if map.contains_key("device_ip") {
-        let mut camera_control = camera_control.0.clone();
-        camera_control.action = Action::GetImageAdjustment;
-
-        let url = match get_camera_api_url(&camera_control).await {
-            Ok(url) => url,
-            Err(error) => {
-                return (StatusCode::INTERNAL_SERVER_ERROR, format!("{error:?}")).into_response();
-            }
-        };
-
-        res = match send_request(reqwest::Client::new().get(url), "".to_string()).await {
-            Ok(res) => res,
-            Err(error) => {
-                warn!("res from send_request: {error:#?}");
-                return (StatusCode::INTERNAL_SERVER_ERROR, format!("{error:?}")).into_response();
-            }
-        };
-
-        trace!("Answer from the camera: {res:#?}");
-    }
 
     (StatusCode::OK, res.to_string()).into_response()
 }
