@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use ts_rs::TS;
+use tsync::tsync;
 
 use super::*;
 
 #[skip_serializing_none]
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[tsync]
 pub struct BaseParameterSetting {
     /// Tonal. Range: [0..=255]
     pub hue: Option<u8>,

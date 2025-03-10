@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use ts_rs::TS;
+use tsync::tsync;
 
 pub mod advanced_display;
 pub mod base_display;
@@ -22,6 +23,7 @@ pub enum DisplayCommand {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u16)]
 pub enum MaxExposureValue {
     #[default]
@@ -41,6 +43,7 @@ pub enum MaxExposureValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AntiFogValue {
     #[default]
@@ -49,6 +52,7 @@ pub enum AntiFogValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum FrameTurboValue {
     #[default]
@@ -58,6 +62,7 @@ pub enum FrameTurboValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum SceneModeValue {
     #[default]
@@ -66,6 +71,7 @@ pub enum SceneModeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AeStrategyModeValue {
     #[default]
@@ -74,6 +80,7 @@ pub enum AeStrategyModeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AutoExposureExValue {
     #[default]
@@ -82,6 +89,7 @@ pub enum AutoExposureExValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u16)]
 pub enum ExposuretimeValue {
     #[default]
@@ -103,6 +111,7 @@ pub enum ExposuretimeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AutoAWB {
     #[default]
@@ -111,6 +120,7 @@ pub enum AutoAWB {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AwbAutoModeValue {
     #[default]
@@ -123,6 +133,7 @@ pub enum AwbAutoModeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AutoGainModeValue {
     #[default]
@@ -131,6 +142,7 @@ pub enum AutoGainModeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum ManualAGainEnableValue {
     #[default]
@@ -139,6 +151,7 @@ pub enum ManualAGainEnableValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum ManualDGainEnableValue {
     #[default]
@@ -147,6 +160,7 @@ pub enum ManualDGainEnableValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum RotateValue {
     #[default]

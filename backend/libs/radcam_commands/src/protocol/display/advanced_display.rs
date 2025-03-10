@@ -2,8 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use serde_with::skip_serializing_none;
 use ts_rs::TS;
+use tsync::tsync;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum MirrorValue {
     #[default]
@@ -12,6 +14,7 @@ pub enum MirrorValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum FlipValue {
     #[default]
@@ -20,6 +23,7 @@ pub enum FlipValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum PowerFreqValue {
     #[default]
@@ -28,6 +32,7 @@ pub enum PowerFreqValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum ColorBlackValue {
     #[default]
@@ -36,6 +41,7 @@ pub enum ColorBlackValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum InfrDetectModeValue {
     #[default]
@@ -45,6 +51,7 @@ pub enum InfrDetectModeValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LensCorrectionValue {
     #[default]
@@ -53,6 +60,7 @@ pub enum LensCorrectionValue {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum IRCUTLevel {
     #[default]
@@ -61,6 +69,7 @@ pub enum IRCUTLevel {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LDRLevel {
     #[default]
@@ -69,6 +78,7 @@ pub enum LDRLevel {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum Antiflicker {
     #[default]
@@ -79,6 +89,7 @@ pub enum Antiflicker {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum Scenemode {
     #[default]
@@ -88,6 +99,7 @@ pub enum Scenemode {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum Hlcenable {
     #[default]
@@ -96,6 +108,7 @@ pub enum Hlcenable {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum Lowfarmerate {
     #[default]
@@ -104,6 +117,7 @@ pub enum Lowfarmerate {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum _2dNrLevel {
     #[default]
@@ -113,6 +127,7 @@ pub enum _2dNrLevel {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum WDRSensor {
     #[default]
@@ -121,6 +136,7 @@ pub enum WDRSensor {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum NoiseReduction {
     #[default]
@@ -131,6 +147,7 @@ pub enum NoiseReduction {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum AutoIris {
     #[default]
@@ -140,6 +157,7 @@ pub enum AutoIris {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LedControl {
     #[default]
@@ -149,6 +167,7 @@ pub enum LedControl {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LedControlAvail {
     #[default]
@@ -157,6 +176,7 @@ pub enum LedControlAvail {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LightControlMode {
     #[default]
@@ -165,6 +185,7 @@ pub enum LightControlMode {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
+#[tsync]
 #[repr(u8)]
 pub enum LampType {
     #[default]
@@ -175,6 +196,7 @@ pub enum LampType {
 
 #[skip_serializing_none]
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[tsync]
 pub struct AdvancedParameterSetting {
     /// Mirror.
     pub mirror: Option<MirrorValue>,
