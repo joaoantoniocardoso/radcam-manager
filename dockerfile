@@ -28,7 +28,7 @@ EXPOSE 8080/tcp
 # Add docker configuration
 LABEL permissions='{ "ExposedPorts": { "8080/tcp": {} }, "HostConfig": { "ExtraHosts": [ "blueos.internal:host-gateway" ], "PortBindings": { "8080/tcp": [ { "HostPort": "" } ] } } }'
 LABEL authors='[ { "name": "João Antônio Cardoso", "email": "joao.maker@gmail.com" } ]'
-LABEL company='{ "about": "The official management interface for RadCam", "name": "Blue Robotics", "email": "support@bluerobotics.com" }'
+LABEL company='{ "about": "RadCam\'s official management interface", "name": "Blue Robotics", "email": "support@bluerobotics.com" }'
 LABEL type="device-integration"
 LABEL readme='https://raw.githubusercontent.com/bluerobotics/radcam-manager/{tag}/README.md'
 LABEL links='{ "website": "https://raw.githubusercontent.com/bluerobotics/radcam-manager/", "support": "https://raw.githubusercontent.com/bluerobotics/radcam-manager/" }'
