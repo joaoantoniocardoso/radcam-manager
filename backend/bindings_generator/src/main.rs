@@ -34,7 +34,7 @@ fn generate_typescript_bindings_for_mcm_client() -> Result<()> {
         fs::create_dir_all(output_dir).unwrap();
     }
 
-    let rsync_bindings = {
+    let tsync_bindings = {
         tsync::generate_typescript_defs(inputs, output.clone(), false, false);
 
         fs::read_to_string(&output)?
@@ -79,7 +79,7 @@ fn generate_typescript_bindings_for_mcm_client() -> Result<()> {
         re.replace_all(bindings.as_str(), "").to_string()
     };
 
-    let bindings = ts_rs_bindings + &rsync_bindings;
+    let bindings = ts_rs_bindings + &tsync_bindings;
 
     // Replace all notices by a custom one
     let bindings = {
@@ -104,7 +104,7 @@ fn generate_typescript_bindings_for_radcam() -> Result<()> {
 
     let _ = fs::remove_file(output.clone());
 
-    let rsync_bindings = {
+    let tsync_bindings = {
         tsync::generate_typescript_defs(inputs, output.clone(), false, false);
 
         fs::read_to_string(&output)?
@@ -125,7 +125,7 @@ fn generate_typescript_bindings_for_radcam() -> Result<()> {
         re.replace_all(bindings.as_str(), "").to_string()
     };
 
-    let bindings = ts_rs_bindings + &rsync_bindings;
+    let bindings = ts_rs_bindings + &tsync_bindings;
 
     // Replace all notices by a custom one
     let bindings = {
