@@ -15,7 +15,6 @@ struct Manager {
     author = option_env!("CARGO_PKG_AUTHORS").unwrap_or("?"),
     about = option_env!("CARGO_PKG_DESCRIPTION").unwrap_or("?"),
 )]
-
 pub struct Args {
     /// Turns all log categories up to Debug, for more information check RUST_LOG env variable.
     #[arg(short, long)]
