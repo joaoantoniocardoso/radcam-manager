@@ -108,4 +108,4 @@ jobs:
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           image-name: 'radcam-manager'
-          checkout-clean: false
+          skip-checkout: true
