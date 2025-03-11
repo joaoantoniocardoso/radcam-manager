@@ -109,3 +109,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           image-name: 'radcam-manager'
           skip-checkout: true
+
+      - name: Build and Publish Extension in BlueOS CLoud
+        uses: bluerobotics/blueos-cloud-action@0.0.1
+        with:
+          BCLOUD_PAT: ${{secrets.BCLOUD_PAT}}
+          EXTENSION: 00192c00-9cfe-406a-916a-aeed46c8f276
+          
