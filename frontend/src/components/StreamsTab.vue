@@ -54,19 +54,20 @@
         item-value="value"
       />
       <v-text-field
-        v-model.number="selectedVideoParameters.bitrate"
+        v-model.number="adjustedBitrate"
         :disabled="props.disabled || processingUpdate"
         label="Bitrate (kbps)"
         type="number"
-        :min="1"
-        max="128000"
+        min="1024"
+        max="40960"
+        step="1024"
       />
       <v-text-field
         v-model.number="selectedVideoParameters.frame_rate"
         :disabled="props.disabled || processingUpdate"
         label="Frame Rate"
         type="number"
-        :min="1"
+        min="1"
         :max="selectedVideoParameters.max_framerate"
       />
       <v-text-field
@@ -74,8 +75,8 @@
         :disabled="props.disabled || processingUpdate"
         label="I-Frame Interval (GOP)"
         type="number"
-        :min="1"
-        max="10000"
+        min="1"
+        max="100"
       />
 
       <v-divider class="ma-5" />
@@ -200,6 +201,14 @@ watch(
 
 onMounted(() => {
   getVideoParameters(true)
+})
+
+const adjustedBitrate = computed({
+  get: () => selectedVideoParameters.value.bitrate,
+  set: (newValue: number) => {
+    const rounded = Math.round(newValue / 1024) * 1024;
+    selectedVideoParameters.value.bitrate = rounded;
+  }
 })
 
 const updateVideoParameters = () => {
