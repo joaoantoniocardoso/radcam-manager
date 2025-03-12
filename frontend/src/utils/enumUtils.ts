@@ -8,6 +8,15 @@ export function enumToOptions<E extends Record<string, number | string>>(enumObj
         .filter((v): v is number => typeof v === 'number')
         .map((value) => ({
             value,
-            text: enumObj[value as unknown as keyof E] as string,
+            text: formatEnumValue(enumObj[value as unknown as keyof E] as string),
         }))
+}
+
+export function formatEnumValue(value: string): string {
+    return value
+        .replace(/([A-Z])/g, " $1")
+        .trim()
+        .toLowerCase()
+        .replace("bit rate", "bitrate")
+        .replace(/^./, (match) => match.toUpperCase())
 }
