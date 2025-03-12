@@ -102,7 +102,7 @@ jobs:
           name: temporary-artifact-*.tar.gz
 
       - name: Deploy BlueOS Extension
-        uses: joaoantoniocardoso/Deploy-BlueOS-Extension@allow-dirty
+        uses: BlueOS-community/Deploy-BlueOS-Extension@main
         with:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
