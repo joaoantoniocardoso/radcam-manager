@@ -118,7 +118,7 @@ jobs:
           version: ${{ github.ref_name }}
       
       - name: Build and Publish Extension in BlueOS Cloud
-        if: ${{ steps.semver.outputs.is-valid == 'true' }}
+        if: ${{ steps.semver.outcome  == 'success' }}
         uses: bluerobotics/blueos-cloud-action@0.0.2
         with:
           BCLOUD_PAT: ${{ secrets.BCLOUD_PAT }}
