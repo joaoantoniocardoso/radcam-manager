@@ -21,7 +21,7 @@ RUN echo "TARGETARCH: ${TARGETARCH}" && \
 
 WORKDIR /
 
-LABEL version="0.1.1"
+LABEL version="0.1.2"
 
 EXPOSE 8080/tcp
 
