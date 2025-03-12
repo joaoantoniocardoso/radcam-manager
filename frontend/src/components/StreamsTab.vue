@@ -1,93 +1,109 @@
 <template>
-  <v-select
+  <v-tabs
     v-model="selectedVideoParameters.channel"
-    :items="channelOptions"
-    :disabled="props.disabled || processingUpdate"
-    label="Stream Channel"
-    item-title="text"
-    item-value="value"
-  />
-  <v-select
-    v-model="selectedVideoParameters.encode_profile"
-    :items="encodeProfileOptions"
-    :disabled="props.disabled || processingUpdate"
-    label="Encode Profile"
-    item-title="text"
-    item-value="value"
-  />
-  <v-select
-    v-model="selectedVideoParameters.encode_type"
-    :items="encodeTypeOptions"
-    :disabled="props.disabled || processingUpdate"
-    label="Encode Type"
-    item-title="text"
-    item-value="value"
-  />
-  <v-select
-    v-model="selectedVideoResolution"
-    :items="resolutionOptions"
-    :disabled="props.disabled || processingUpdate"
-    label="Resolution"
-    item-title="text"
-    item-value="value"
-  />
-  <v-select
-    v-model="selectedVideoParameters.rc_mode"
-    :items="rcModeOptions"
-    :disabled="props.disabled || processingUpdate"
-    label="Bitrate Type"
-    item-title="text"
-    item-value="value"
-  />
-  <v-text-field
-    v-model.number="selectedVideoParameters.bitrate"
-    :disabled="props.disabled || processingUpdate"
-    label="Bitrate (kbps)"
-    type="number"
-    :min="1"
-    max="128000"
-  />
-  <v-text-field
-    v-model.number="selectedVideoParameters.frame_rate"
-    :disabled="props.disabled || processingUpdate"
-    label="Frame Rate"
-    type="number"
-    :min="1"
-    :max="selectedVideoParameters.max_framerate"
-  />
-  <v-text-field
-    v-model.number="selectedVideoParameters.gop"
-    :disabled="props.disabled || processingUpdate"
-    label="I-Frame Interval (GOP)"
-    type="number"
-    :min="1"
-    max="10000"
-  />
-
-  <v-divider class="ma-5" />
-
-  <div class="ma-2 text-right">
-    <v-btn
-      variant="tonal"
+    align-tabs="center"
+  >
+    <v-tab
+      v-for="option in channelOptions.filter(opt => opt.value < 2)"
+      :key="option.value"
+      :value="option.value"
       :disabled="props.disabled || processingUpdate"
-      @click="updateVideoParameters"
     >
-      <v-progress-circular
-        v-if="processingUpdate"
-        indeterminate
-        color="white"
-        size="20"
-        class="me-2"
+      {{ option.text }}
+    </v-tab>
+  </v-tabs>
+  <v-window
+    v-model="selectedVideoParameters.channel"
+    class="pt-5"
+  >
+    <v-window-item
+      v-for="option in channelOptions"
+      :key="option.value"
+      :value="option.value"
+    >
+      <v-select
+        v-model="selectedVideoParameters.encode_profile"
+        :items="encodeProfileOptions"
+        :disabled="props.disabled || processingUpdate"
+        label="Encode Profile"
+        item-title="text"
+        item-value="value"
       />
-      {{
-        processingUpdate
-          ? "Processing..."
-          : needs_restart
-            ? "Apply and Restart"
-            : "Apply"
-      }}
-    </v-btn>
-  </div>
+      <v-select
+        v-model="selectedVideoParameters.encode_type"
+        :items="encodeTypeOptions"
+        :disabled="props.disabled || processingUpdate"
+        label="Encode Type"
+        item-title="text"
+        item-value="value"
+      />
+      <v-select
+        v-model="selectedVideoResolution"
+        :items="resolutionOptions"
+        :disabled="props.disabled || processingUpdate"
+        label="Resolution"
+        item-title="text"
+        item-value="value"
+      />
+      <v-select
+        v-model="selectedVideoParameters.rc_mode"
+        :items="rcModeOptions"
+        :disabled="props.disabled || processingUpdate"
+        label="Bitrate Type"
+        item-title="text"
+        item-value="value"
+      />
+      <v-text-field
+        v-model.number="selectedVideoParameters.bitrate"
+        :disabled="props.disabled || processingUpdate"
+        label="Bitrate (kbps)"
+        type="number"
+        :min="1"
+        max="128000"
+      />
+      <v-text-field
+        v-model.number="selectedVideoParameters.frame_rate"
+        :disabled="props.disabled || processingUpdate"
+        label="Frame Rate"
+        type="number"
+        :min="1"
+        :max="selectedVideoParameters.max_framerate"
+      />
+      <v-text-field
+        v-model.number="selectedVideoParameters.gop"
+        :disabled="props.disabled || processingUpdate"
+        label="I-Frame Interval (GOP)"
+        type="number"
+        :min="1"
+        max="10000"
+      />
+
+      <v-divider class="ma-5" />
+
+      <div class="ma-2 text-right">
+        <v-btn
+          variant="tonal"
+          :disabled="props.disabled || processingUpdate"
+          @click="updateVideoParameters"
+        >
+          <v-progress-circular
+            v-if="processingUpdate"
+            indeterminate
+            color="white"
+            size="20"
+            class="me-2"
+          />
+          {{
+            processingUpdate
+              ? "Processing..."
+              : needs_restart
+                ? "Apply and Restart"
+                : "Apply"
+          }}
+        </v-btn>
+      </div>
+    </v-window-item>
+  </v-window>
 </template>
 
 <script setup lang="ts">
