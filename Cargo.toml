@@ -6,7 +6,7 @@ members = [
     "backend/libs/utils",
     "backend/libs/web_client",
     "backend/bin",
-    "backend/bindings_generator"
+    "backend/bindings_generator",
 ]
 resolver = "2"
 
