@@ -129,7 +129,7 @@ async fn start_radcams_streams(mcm_address: &SocketAddr) {
         loop {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
-            let radcam_streams = match mcm.get_radcam_streams().await {
+            let existing_radcam_streams = match mcm.get_radcam_streams().await {
                 Ok(streams) => streams,
                 Err(error) => {
                     debug!("Failed to get radcam streams: {error:?}");
@@ -137,33 +137,33 @@ async fn start_radcams_streams(mcm_address: &SocketAddr) {
                 }
             };
 
-            let radcam_sources = match mcm.get_radcam_video_sources().await {
+            let available_radcam_sources = match mcm.get_radcam_video_sources().await {
                 Ok(sources) => sources,
                 Err(error) => {
-                    debug!("Failed to get radcam streams: {error:?}");
+                    debug!("Failed to get radcam video sources: {error:?}");
                     continue;
                 }
             };
 
-            for source in radcam_sources {
-                if radcam_streams.iter().any(|stream| {
+            for source in available_radcam_sources {
+                if existing_radcam_streams.iter().any(|stream| {
                     // Note: Here we are ignoring any authentication so we avoid duplicated streams
 
-                    let mut this_source = stream.source_endpoint.clone();
-                    this_source.set_password(None).unwrap();
-                    this_source.set_username("").unwrap();
+                    let mut existing_source = stream.source_endpoint.clone();
+                    existing_source.set_password(None).unwrap();
+                    existing_source.set_username("").unwrap();
 
-                    let mut that_source: Url = source.source.clone().parse().unwrap();
-                    that_source.set_password(None).unwrap();
-                    that_source.set_username("").unwrap();
+                    let mut available_source: Url = source.source.clone().parse().unwrap();
+                    available_source.set_password(None).unwrap();
+                    available_source.set_username("").unwrap();
 
-                    this_source.eq(&that_source)
+                    existing_source.eq(&available_source)
                 }) {
                     continue;
                 }
 
                 if let Err(error) = mcm.create_stream(source).await {
-                    warn!("Failed creating video source {error:?}");
+                    warn!("Failed creating stream: {error:?}");
                     continue;
                 }
             }
