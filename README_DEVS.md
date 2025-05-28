@@ -38,7 +38,7 @@ There are a few options:
   },
   "HostConfig": {
     "Binds":[
-      "/var/logs/blueos/extensions/radcam-manager:./logs"
+      "/var/logs/blueos/extensions/radcam-manager:/logs"
     ],
     "ExtraHosts": [
       "blueos.internal:host-gateway"
