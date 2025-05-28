@@ -37,6 +37,9 @@ There are a few options:
     "8080/tcp": {}
   },
   "HostConfig": {
+    "Binds":[
+      "/var/logs/blueos/extensions/radcam-manager:./logs"
+    ],
     "ExtraHosts": [
       "blueos.internal:host-gateway"
     ],
