@@ -146,10 +146,19 @@ async fn start_radcams_streams(mcm_address: &SocketAddr) {
             };
 
             for source in radcam_sources {
-                if radcam_streams
-                    .iter()
-                    .any(|stream| stream.source_endpoint.to_string().eq(&source.source))
-                {
+                if radcam_streams.iter().any(|stream| {
+                    // Note: Here we are ignoring any authentication so we avoid duplicated streams
+
+                    let mut this_source = stream.source_endpoint.clone();
+                    this_source.set_password(None).unwrap();
+                    this_source.set_username("").unwrap();
+
+                    let mut that_source: Url = source.source.clone().parse().unwrap();
+                    that_source.set_password(None).unwrap();
+                    that_source.set_username("").unwrap();
+
+                    this_source.eq(&that_source)
+                }) {
                     continue;
                 }
 
