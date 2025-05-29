@@ -173,8 +173,15 @@ impl MCMClient {
             .context("Empty intervals")?
             .to_owned();
 
-        // TODO: Decide a way to set this number
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_URL, source.source.as_bytes());
+        // TODO: When using DHCP, there's no guarantee that the IP of the camera is kept the same, so we NEED to find a more robust ID
+        let id = {
+            let source: url::Url = source.source.clone().parse()?;
+
+            let host = source.host_str().context("No host")?;
+            let stream_id = source.path().chars().last().context("No path")?;
+
+            format!("{host}/{stream_id}")
+        };
 
         let data = PostStream {
             name: format!("RadCam {id}"),
