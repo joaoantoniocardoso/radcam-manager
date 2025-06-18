@@ -43,6 +43,14 @@ pub struct Args {
     /// Sets the file path for the autopilot lua script to control zoom and focus
     #[arg(long, default_value = "./scripts/radcam.lua")]
     autopilot_scripts_file: Option<String>,
+
+    /// Sets the settings file path
+    #[arg(
+        long,
+        value_name = "./settings.json",
+        default_value = "~/.config/radcam-manager/settings.json"
+    )]
+    settings_file: String,
 }
 
 /// Constructs our manager, Should be done inside main
