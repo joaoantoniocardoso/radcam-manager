@@ -20,12 +20,12 @@ jobs:
         with:
           key: "${{ hashFiles('**/Cargo.lock') }}"
           shared-key: "shared"
-      
+
       - name: Install build dependencies - Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl,armv7-unknown-linux-musleabihf
-        
+
       - name: Install build dependencies - Cross
         run: cargo install cross
 
@@ -33,15 +33,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "*"
-          cache-dependency-path: 'frontend/package-lock.json'
-          cache: 'npm'
+          cache-dependency-path: "frontend/package-lock.json"
+          cache: "npm"
 
       - name: Check style
         run: cargo fmt --check
 
       - name: Build
         run: ./build.sh --all-features --locked --verbose
-        
+
       - name: Check clippy
         run: cargo clippy --all-features --locked
 
