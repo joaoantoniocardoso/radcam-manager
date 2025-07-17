@@ -91,6 +91,7 @@ pub struct StreamStatus {
     pub id: uuid::Uuid,
     pub running: bool,
     pub video_and_stream: VideoAndStreamInformation,
+    pub mavlink: Option<MavlinkComponent>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, TS)]
@@ -98,6 +99,12 @@ pub struct VideoAndStreamInformation {
     pub name: String,
     pub stream_information: StreamInformation,
     pub video_source: VideoSourceType,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct MavlinkComponent {
+    pub system_id: u8,
+    pub component_id: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, TS)]
