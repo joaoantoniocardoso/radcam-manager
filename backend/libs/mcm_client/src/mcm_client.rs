@@ -3,7 +3,6 @@ use std::net::SocketAddr;
 use anyhow::{Context, Result, anyhow};
 use indexmap::IndexMap;
 use tracing::*;
-use web_client;
 
 use crate::mcm_types::{
     ApiVideoSource, AuthenticateOnvifDeviceRequest, CaptureConfiguration, Format, Info,

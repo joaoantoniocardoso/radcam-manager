@@ -77,7 +77,7 @@ fn widgets(cameras: &Cameras) -> Vec<CockpitWidget> {
         .unwrap_or("0.0.0")
         .to_string();
 
-    let widgets = cameras
+    cameras
         .iter()
         .map(|(camera_uuid, camera)| CockpitWidget {
             name: format!("RadCam ({})", camera.hostname),
@@ -86,15 +86,13 @@ fn widgets(cameras: &Cameras) -> Vec<CockpitWidget> {
             iframe_icon: "/assets/logo.svg".to_string(),
             version: version.clone(),
         })
-        .collect::<Vec<CockpitWidget>>();
-
-    widgets
+        .collect()
 }
 
 fn actions(cameras: &Cameras) -> Vec<CockpitAction> {
-    let actions = cameras
+    cameras
         .iter()
-        .map(|(camera_uuid, camera)| {
+        .flat_map(|(camera_uuid, camera)| {
             let name: String = format!("RadCam White Balance ({})", camera.hostname);
 
             vec![CockpitAction {
@@ -122,7 +120,5 @@ fn actions(cameras: &Cameras) -> Vec<CockpitAction> {
                 }),
             }]
         })
-        .flatten()
-        .collect::<Vec<CockpitAction>>();
-    actions
+        .collect()
 }
