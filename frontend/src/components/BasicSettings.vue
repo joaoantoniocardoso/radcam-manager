@@ -87,7 +87,7 @@
         width="400px"
         theme="dark"
         class="mt-6"
-        @update:model-value="updateZoomAndFocusParameter('focus_margin_gain', $event)"
+        @update:model-value="updateActuatorsConfig('focus_margin_gain', $event)"
       />
       <BlueSlider
         v-model="focusAndZoomParams.zoom_channel_trim"
@@ -101,15 +101,15 @@
         width="400px"
         theme="dark"
         class="mt-6"
-        @update:model-value="updateZoomAndFocusParameter('zoom_channel_trim', $event)"
+        @update:model-value="updateActuatorsConfig('zoom_channel_trim', $event)"
       />
       <BlueSwitch
-        v-model="focusAndZoomParams.zoom_focus_correlation"
+        v-model="focusAndZoomParams.enable_focus_and_zoom_correlation"
         name="focus-zoom-correlation"
         label="Focus and zoom correlation"
         theme="dark"
         class="mt-5"
-        @update:model-value="updateZoomAndFocusParameter('zoom_focus_correlation', $event)"
+        @update:model-value="updateActuatorsConfig('enable_focus_and_zoom_correlation', $event)"
       />
       <BlueSlider
         v-model="focusAndZoomParams.focus_channel_trim"
@@ -121,7 +121,7 @@
         width="400px"
         theme="dark"
         class="mt-5"
-        @update:model-value="updateZoomAndFocusParameter('focus_channel_trim', $event)"
+        @update:model-value="updateActuatorsConfig('focus_channel_trim', $event)"
       />
     </ExpansiblePanel>
     <ExpansiblePanel
@@ -146,7 +146,7 @@
         label="Focus PWM output"
         :items="servoChannelOptions"
         theme="dark"
-        @update:model-value="updateZoomAndFocusParameter('focus_channel', $event)"
+        @update:model-value="updateActuatorsConfig('focus_channel', $event)"
       />
       <BlueSelect
         v-model="focusAndZoomParams.zoom_channel"
@@ -154,7 +154,7 @@
         :items="servoChannelOptions"
         theme="dark"
         class="mt-6"
-        @update:model-value="updateZoomAndFocusParameter('zoom_channel', $event)"
+        @update:model-value="updateActuatorsConfig('zoom_channel', $event)"
       />
       <BlueSelect
         v-model="focusAndZoomParams.tilt_channel"
@@ -162,7 +162,7 @@
         :items="servoChannelOptions"
         theme="dark"
         class="mt-6"
-        @update:model-value="updateZoomAndFocusParameter('tilt_channel', $event)"
+        @update:model-value="updateActuatorsConfig('tilt_channel', $event)"
       />
       <ExpansibleOptions
         :is-open="openRGBSetpointOptions"
@@ -176,7 +176,7 @@
           label="Tilt channel reversed"
           theme="dark"
           class="scale-90 origin-right"
-          @update:model-value="updateZoomAndFocusParameter('tilt_channel_reversed', $event)"
+          @update:model-value="updateActuatorsConfig('tilt_channel_reversed', $event)"
         />
       </ExpansibleOptions>
     </ExpansiblePanel>
@@ -252,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import BlueButtonGroup from './BlueButtonGroup.vue'
 import BlueSlider from './BlueSlider.vue'
 import BlueSwitch from './BlueSwitch.vue'
@@ -261,7 +261,7 @@ import BlueSelect from './BlueSelect.vue'
 import ExpansibleOptions from './ExpansibleOptions.vue'
 import type { BaseParameterSetting, VideoParameterSettings, VideoResolutionValue } from '@/bindings/radcam'
 import axios from 'axios'
-import type { FocusAndZoomParametersQuery, ServoChannel } from '@/bindings/autopilot'
+import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState, ServoChannel } from '@/bindings/autopilot'
 
 const props = defineProps<{
   selectedCameraUuid: string | null
@@ -316,21 +316,24 @@ const baseParams = ref<BaseParameterSetting>({
   rotate: null,
 })
 
-const focusAndZoomParams = ref<FocusAndZoomParametersQuery>({
+const focusAndZoomParams = ref<ActuatorsParametersConfig>({
   focus_channel: null,
   focus_channel_min: null,
   focus_channel_trim: null,
   focus_channel_max: null,
   focus_margin_gain: null,
-  focus_speed: null,
   script_function: null,
+  script_channel: null,
+  script_channel_min: null,
+  script_channel_trim: null,
+  script_channel_max: null,
+  enable_focus_and_zoom_correlation: null,
   zoom_channel: null,
   zoom_channel_min: null,
   zoom_channel_trim: null,
   zoom_channel_max: null,
-  zoom_speed: null,
-  zoom_focus_correlation: null,
   tilt_channel: null,
+  tilt_channel_min: null,
   tilt_channel_trim: null,
   tilt_channel_max: null,
   tilt_channel_reversed: null,
@@ -475,7 +478,7 @@ const updateBaseParameter = (param: keyof BaseParameterSetting, value: any) => {
   console.log(payload)
 
   axios
-    .post(`${props.backendApi}/control`, payload)
+    .post(`${props.backendApi}/camera/control`, payload)
     .then((response) => {
       baseParams.value = response.data as BaseParameterSetting
     })
@@ -484,31 +487,131 @@ const updateBaseParameter = (param: keyof BaseParameterSetting, value: any) => {
     })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const updateZoomAndFocusParameter = (param: keyof FocusAndZoomParametersQuery, value: any) => {
+const getActuatorsConfig = () => {
   if (!props.selectedCameraUuid) {
     return
   }
 
   const payload = {
     camera_uuid: props.selectedCameraUuid,
-    action: 'setZoomAndFocusParameters',
-    json: {
-      [param]: value,
-    },
+    action: "getActuatorsConfig",
   }
 
   console.log(payload)
 
   axios
-    .post(`${props.backendApi}/zoom-and-focus`, payload)
+    .post(`${props.backendApi}/autopilot/control`, payload)
+    .then(response => {
+      const newParams = (response.data as ActuatorsConfig)?.parameters
+      if (newParams) {
+        focusAndZoomParams.value = { ...newParams }
+      } else {
+        console.warn("Received null 'parameters' from response:", response.data)
+      }
+      console.log(response.data)
+    })
+    .catch(error => {
+      console.error(`Error sending getActuatorsConfig request:`, error.message)
+    })
+}
+
+watch(() => focusAndZoomParams.value.focus_channel, (val) => {
+  console.log('focus_channel changed to', val)
+})
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateActuatorsConfig = (param: keyof ActuatorsParametersConfig, value: any) => {
+  if (!props.selectedCameraUuid) {
+    return
+  }
+
+   const payload: ActuatorsControl = {
+    camera_uuid: props.selectedCameraUuid,
+    action: "setActuatorsConfig",
+    json: { "parameters": { [param]: value } as ActuatorsParametersConfig} as ActuatorsConfig
+  }
+
+  console.log(payload)
+
+  axios
+    .post(`${props.backendApi}/autopilot/control`, payload)
     .then((response) => {
-      focusAndZoomParams.value = response.data as FocusAndZoomParametersQuery
+      const newParams = (response.data as ActuatorsConfig)?.parameters
+      if (newParams) {
+        focusAndZoomParams.value = { ...newParams }
+      } else {
+        console.warn("Received null 'parameters' from response:", response.data)
+      }
     })
     .catch((error) => {
       console.error(`Error sending ${String(param)} control with value '${value}':`, error.message)
     })
 }
+
+const getActuatorsState = () => {
+  if (!props.selectedCameraUuid) {
+    return
+  }
+
+  const payload = {
+    camera_uuid: props.selectedCameraUuid,
+    action: "getActuatorsState",
+  }
+
+  console.log(payload)
+
+  axios
+    .post(`${props.backendApi}/autopilot/control`, payload)
+    .then(response => {
+      // the return type is a ActuatorsState
+      // actuatorsState.value = { ...response.data }
+      console.log(response.data)
+    })
+    .catch(error => {
+      console.error(`Error sending getImageAdjustment request:`, error.message)
+    })
+}
+
+// TODO: integrate independent FOCUS / ZOOM / TILT contros using this API
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateActuatorsState = (param: keyof ActuatorsState, value: any) => {
+  if (!props.selectedCameraUuid) return
+
+  const payload: ActuatorsControl = {
+    camera_uuid: props.selectedCameraUuid,
+    action: "setActuatorsState",
+    json: { [param]: value } as ActuatorsState
+  }
+
+  console.log(payload)
+
+  axios
+    .post(`${props.backendApi}/autopilot/control`, payload)
+    .then(response => {
+      // the return type is a ActuatorsState
+      // actuatorsState.value = { ...response.data }
+      console.log(response.data)
+    })
+    .catch(error => {
+      console.error(`Error updating ${param}:`, error.message)
+    })
+}
+
+onMounted(() => {
+  getActuatorsConfig()
+  getActuatorsState()
+})
+
+watch(
+  () => props.selectedCameraUuid,
+  async (newValue) => {
+    if (newValue) {
+      getActuatorsConfig()
+      getActuatorsState()
+    }
+  }
+)
 
 watch(cockpitDisplay, (newVal) => {
   console.log('cockpitDisplay changed:', newVal)

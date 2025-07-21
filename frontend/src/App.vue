@@ -99,7 +99,7 @@ import BlueButtonGroup from '@/components/BlueButtonGroup.vue'
 
 const tab = ref(null)
 const backendAddress = window.location.host.toString()
-const backendAPI = ref(`http://${backendAddress}/v1/camera`)
+const backendAPI = ref(`http://${backendAddress}/v1`)
 const cameras = ref<Camera[]>([])
 const selectedCameraUUID = ref<string | null>(null)
 
@@ -111,7 +111,7 @@ const configMode = ref<'basic' | 'advanced'>('basic')
 
 const getCameras = async () => {
   try {
-    const response = await axios.get(`${backendAPI.value}/list`)
+    const response = await axios.get(`${backendAPI.value}/camera/list`)
     const camerasData = validateCameras(response.data)
     cameras.value = camerasData
 
