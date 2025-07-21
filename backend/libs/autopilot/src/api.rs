@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::parameters::ActuatorsParameters;
+use crate::{CameraActuators, parameters::ActuatorsParameters};
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct ActuatorsControl {
@@ -38,6 +38,16 @@ pub struct ActuatorsConfig {
     pub parameters: Option<ActuatorsParametersConfig>,
     pub closest_points: Option<FocusZoomPoints>,
     pub furthest_points: Option<FocusZoomPoints>,
+}
+
+impl From<&CameraActuators> for ActuatorsConfig {
+    fn from(value: &CameraActuators) -> Self {
+        Self {
+            parameters: Some((&value.parameters).into()),
+            closest_points: Some(value.closest_points.clone()),
+            furthest_points: Some(value.furthest_points.clone()),
+        }
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, TS)]
