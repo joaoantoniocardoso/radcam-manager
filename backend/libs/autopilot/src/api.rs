@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
+use crate::parameters::ActuatorsParameters;
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct ActuatorsControl {
     #[ts(as = "String")]
@@ -72,6 +74,36 @@ pub struct ActuatorsParametersConfig {
     pub tilt_mnt_type: Option<MountType>,
     pub tilt_mnt_pitch_min: Option<i32>,
     pub tilt_mnt_pitch_max: Option<i32>,
+}
+
+impl From<&ActuatorsParameters> for ActuatorsParametersConfig {
+    fn from(value: &ActuatorsParameters) -> Self {
+        Self {
+            focus_channel: Some(value.focus_channel),
+            focus_channel_min: Some(value.focus_channel_min),
+            focus_channel_trim: Some(value.focus_channel_trim),
+            focus_channel_max: Some(value.focus_channel_max),
+            focus_margin_gain: Some(value.focus_margin_gain),
+            script_function: Some(value.script_function),
+            script_channel: Some(value.script_channel),
+            script_channel_min: Some(value.script_channel_min),
+            script_channel_trim: Some(value.script_channel_trim),
+            script_channel_max: Some(value.script_channel_max),
+            enable_focus_and_zoom_correlation: Some(value.enable_focus_and_zoom_correlation),
+            zoom_channel: Some(value.zoom_channel),
+            zoom_channel_min: Some(value.zoom_channel_min),
+            zoom_channel_trim: Some(value.zoom_channel_trim),
+            zoom_channel_max: Some(value.zoom_channel_max),
+            tilt_channel: Some(value.tilt_channel),
+            tilt_channel_min: Some(value.tilt_channel_min),
+            tilt_channel_trim: Some(value.tilt_channel_trim),
+            tilt_channel_max: Some(value.tilt_channel_max),
+            tilt_channel_reversed: Some(value.tilt_channel_reversed),
+            tilt_mnt_type: Some(value.tilt_mnt_type),
+            tilt_mnt_pitch_min: Some(value.tilt_mnt_pitch_min),
+            tilt_mnt_pitch_max: Some(value.tilt_mnt_pitch_max),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
