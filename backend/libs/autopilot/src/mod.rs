@@ -1,18 +1,25 @@
 pub mod api;
+mod manager;
 mod mavlink;
 pub mod parameters;
 pub mod routes;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use tracing::*;
 
-use crate::parameters::{ActuatorsParameters, CLOSEST_POINTS, FURTHEST_POINTS};
+pub use manager::init;
+
+use crate::{
+    manager::MANAGER,
+    parameters::{ActuatorsParameters, CLOSEST_POINTS, FURTHEST_POINTS},
+};
 
 pub use routes::router;
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Config {
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+struct CameraActuators {
     pub parameters: ActuatorsParameters,
     pub closest_points: api::FocusZoomPoints,
     pub furthest_points: api::FocusZoomPoints,
@@ -34,7 +41,70 @@ impl Default for CameraActuators {
 pub(crate) async fn control_inner(
     actuators_control: Json<api::ActuatorsControl>,
 ) -> Result<serde_json::Value> {
+    use api::Action;
+
     debug!("Got control query: {actuators_control:#?}");
 
-    unimplemented!()
+    let res = match &actuators_control.action {
+        Action::GetActuatorsState => {
+            let manager = MANAGER.get().unwrap().read().await;
+
+            let state = &manager
+                .settings
+                .actuators
+                .get(&actuators_control.camera_uuid)
+                .context("Camera's actuators not configured")?
+                .state;
+
+            settings::MANAGER
+                .get()
+                .unwrap()
+                .write()
+                .await
+                .settings
+                .save()
+                .await?;
+
+            serde_json::to_value(state)?
+        }
+        Action::SetActuatorsState(new_state) => {
+            let mut manager = MANAGER.get().unwrap().write().await;
+
+            let state = manager
+                .update_state(&actuators_control.camera_uuid, new_state)
+                .await?;
+
+            serde_json::to_value(state)?
+        }
+        Action::GetActuatorsConfig => {
+            let manager = MANAGER.get().unwrap().read().await;
+
+            let config: &api::ActuatorsConfig = &manager
+                .settings
+                .actuators
+                .get(&actuators_control.camera_uuid)
+                .context("Camera's actuators not configured")?
+                .into();
+
+            serde_json::to_value(config)?
+        }
+        Action::SetActuatorsConfig(new_config) => {
+            let mut manager = MANAGER.get().unwrap().write().await;
+
+            manager
+                .update_config(&actuators_control.camera_uuid, new_config)
+                .await?;
+
+            let config: &api::ActuatorsConfig = &manager
+                .settings
+                .actuators
+                .get(&actuators_control.camera_uuid)
+                .context("Camera's actuators not configured")?
+                .into();
+
+            serde_json::to_value(config)?
+        }
+    };
+
+    Ok(res)
 }
