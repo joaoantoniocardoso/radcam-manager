@@ -1,4 +1,6 @@
 pub mod api;
+mod mavlink;
+pub mod parameters;
 pub mod routes;
 
 use anyhow::Result;
