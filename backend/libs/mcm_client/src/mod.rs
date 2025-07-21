@@ -112,12 +112,12 @@ async fn authenticate_radcams(mcm_address: &SocketAddr) {
 
                 debug!("New RadCam found: {camera:?}");
 
-                if let Err(error) = mcm.authenticate(&camera).await {
+                if let Err(error) = mcm.authenticate(camera).await {
                     debug!("Failed authenticating onvif camera {camera:?}: {error:?}");
                     continue;
                 }
 
-                if let Err(error) = add_camera(&camera).await {
+                if let Err(error) = add_camera(camera).await {
                     debug!("Failed adding camera {camera:?}: {error:?}");
                     continue;
                 }
