@@ -27,6 +27,15 @@ async fn main() -> Result<()> {
 
     mcm_client::init(cli::mcm_address().await).await;
 
+    autopilot::init(
+        cli::autopilot_scripts_file(),
+        cli::mavlink_connection_string(),
+        cli::mavlink_system_id(),
+        cli::mavlink_component_id(),
+    )
+    .await
+    .unwrap();
+
     web::run(cli::web_server().await, cli::default_api_version()).await;
 
     Ok(())
