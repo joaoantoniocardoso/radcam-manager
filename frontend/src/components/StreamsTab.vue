@@ -229,7 +229,7 @@ const updateVideoParameters = () => {
   }
 
   axios
-    .post(`${props.backendApi}/control`, payload)
+    .post(`${props.backendApi}/camera/control`, payload)
     .then((response) => {
       if (!needs_restart.value) {
         const settings: VideoParameterSettings =
@@ -267,7 +267,7 @@ const doRestart = () => {
   }
 
   axios
-    .post(`${props.backendApi}/control`, payload)
+    .post(`${props.backendApi}/camera/control`, payload)
     .then((response) => {
       console.log("Got an answer from the restarting request", response.data)
       needs_restart.value = false
@@ -299,7 +299,7 @@ const getVideoParameters = (update: boolean) => {
   }
 
   axios
-    .post(`${props.backendApi}/control`, payload)
+    .post(`${props.backendApi}/camera/control`, payload)
     .then((response) => {
       const settings: VideoParameterSettings =
         response.data as VideoParameterSettings

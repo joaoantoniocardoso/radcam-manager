@@ -877,7 +877,7 @@ const updateBaseParameter = (param: keyof BaseParameterSetting, value: any) => {
 
   console.log(payload)
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       baseParams.value = response.data as BaseParameterSetting
     })
@@ -896,7 +896,7 @@ const getBaseParameters = () => {
     action: "getImageAdjustment",
   }
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       baseParams.value = response.data as BaseParameterSetting
       console.log(response.data)
@@ -923,7 +923,7 @@ const doWhiteBalance = async () => {
     } as AdvancedParameterSetting,
   }
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .catch(error => {
       console.error("Error sending onceAWB control:", error.message)
     }).finally(() => {
@@ -948,7 +948,7 @@ const doRestoreBase = async () => {
   }
 
   axios
-    .post(`${props.backendApi}/control`, payload)
+    .post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       baseParams.value = response.data as BaseParameterSetting
     })
@@ -968,7 +968,7 @@ const getAdvancedParameters = () => {
     action: "getImageAdjustmentEx",
   }
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       advancedParams.value = response.data as AdvancedParameterSetting
     })
@@ -987,7 +987,7 @@ const updateAdvancedParam = (param: keyof AdvancedParameterSetting, value: any) 
     json: { [param]: value } as AdvancedParameterSetting
   }
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       advancedParams.value = { ...advancedParams.value, ...response.data }
     })
@@ -1007,7 +1007,7 @@ const doRestoreAdvanced = async () => {
     json: { set_default: 1 } as AdvancedParameterSetting
   }
 
-  axios.post(`${props.backendApi}/control`, payload)
+  axios.post(`${props.backendApi}/camera/control`, payload)
     .then(response => {
       advancedParams.value = response.data as AdvancedParameterSetting
     })
