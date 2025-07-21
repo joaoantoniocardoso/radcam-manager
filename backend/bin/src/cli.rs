@@ -43,6 +43,22 @@ pub struct Args {
     /// Sets the file path for the autopilot lua script to control zoom and focus
     #[arg(long, default_value = "./scripts/radcam.lua")]
     autopilot_scripts_file: Option<String>,
+
+    /// Sets the mavlink connection string
+    #[arg(
+        long,
+        value_name = "<TYPE>:<IP/SERIAL>:<PORT/BAUDRATE>",
+        default_value = "tcpout:127.0.0.1:5777"
+    )]
+    mavlink: String,
+
+    /// Sets the MAVLink System ID.
+    #[arg(long, value_name = "SYSTEM_ID", default_value = "1")]
+    mavlink_system_id: u8,
+
+    /// Sets the MAVLink Component ID.
+    #[arg(long, value_name = "COMPONENT_ID", default_value = "56")]
+    mavlink_component_id: u8,
 }
 
 /// Constructs our manager, Should be done inside main
@@ -126,6 +142,20 @@ pub fn autopilot_scripts_file() -> String {
     }
 
     autopilot_scripts_file
+}
+
+pub fn mavlink_connection_string() -> String {
+    args().mavlink.clone()
+}
+
+#[instrument(level = "debug")]
+pub fn mavlink_system_id() -> u8 {
+    args().mavlink_system_id
+}
+
+#[instrument(level = "debug")]
+pub fn mavlink_component_id() -> u8 {
+    args().mavlink_component_id
 }
 
 #[instrument(level = "debug")]
