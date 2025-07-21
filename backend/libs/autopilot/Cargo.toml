@@ -11,10 +11,13 @@ bench = false
 [dependencies]
 anyhow = "1.0.98"
 axum = { version = "0.8.3", features = ["ws"] }
+mavlink = { default-features = false, features = ["std", "tcp", "udp", "direct-serial", "ardupilotmega", "serde", "tokio-1", "format-generated-code", "emit-extensions"], git = "https://github.com/mavlink/rust-mavlink.git", rev = "57379ef" }
 reqwest = { version = "0.12.15", default-features = false, features = ["http2", "json", "rustls-tls"] }
 serde = "1.0.219"
 serde_derive = "1.0.219"
 serde_json = "1.0.140"
+tokio = { version = "1.44.2", default-features = false, features = ["time", "fs", "io-util", "macros"] }
+tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"] }
 tower-http = { version = "0.6", features = ["normalize-path", "trace", "cors"] }
 tracing = "0.1.41"
 ts-rs = { version = "10.1.0", features = ["serde_json", "no-serde-warnings"] }
