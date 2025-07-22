@@ -3,6 +3,7 @@ mod manager;
 mod mavlink;
 pub mod parameters;
 pub mod routes;
+mod settings_translations;
 
 use anyhow::{Context, Result};
 use axum::Json;
