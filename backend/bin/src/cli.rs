@@ -44,6 +44,14 @@ pub struct Args {
     #[arg(long, default_value = "./scripts/radcam.lua")]
     autopilot_scripts_file: Option<String>,
 
+    /// Sets the settings file path
+    #[arg(
+        long,
+        value_name = "./settings.json",
+        default_value = "~/.config/radcam-manager/settings.json"
+    )]
+    settings_file: String,
+
     /// Sets the mavlink connection string
     #[arg(
         long,
@@ -142,6 +150,15 @@ pub fn autopilot_scripts_file() -> String {
     }
 
     autopilot_scripts_file
+}
+
+#[instrument(level = "debug")]
+pub fn settings_file() -> String {
+    let settings_file = args().settings_file.clone();
+
+    shellexpand::full(&settings_file)
+        .expect("Failed to expand path")
+        .to_string()
 }
 
 pub fn mavlink_connection_string() -> String {
