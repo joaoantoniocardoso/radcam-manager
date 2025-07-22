@@ -27,6 +27,8 @@ async fn main() -> Result<()> {
 
     mcm_client::init(cli::mcm_address().await).await;
 
+    settings::init(cli::settings_file()).await.unwrap();
+
     autopilot::init(
         cli::autopilot_scripts_file(),
         cli::mavlink_connection_string(),
