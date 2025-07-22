@@ -4,6 +4,7 @@ members = [
     "backend/libs/mcm_client",
     "backend/libs/radcam_commands",
     "backend/libs/radcam_manager",
+    "backend/libs/settings",
     "backend/libs/utils",
     "backend/libs/web_client",
     "backend/bin",
