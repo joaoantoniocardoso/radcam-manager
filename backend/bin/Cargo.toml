@@ -8,6 +8,7 @@ default-run = "radcam-manager"
 [dependencies]
 autopilot = { path="../libs/autopilot" }
 mcm_client = { path="../libs/mcm_client" }
+radcam_manager = { path="../libs/radcam_manager" }
 web_client = { path="../libs/web_client" }
 
 anyhow = "1.0.98"
