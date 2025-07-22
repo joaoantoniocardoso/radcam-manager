@@ -24,21 +24,21 @@ pub enum Action {
     SetActuatorsConfig(ActuatorsConfig),
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, Copy, TS)]
 pub struct ActuatorsState {
     pub focus: Option<f32>,
     pub zoom: Option<f32>,
     pub tilt: Option<f32>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, TS)]
 pub struct ActuatorsConfig {
     pub parameters: Option<ActuatorsParametersConfig>,
     pub closest_points: Option<FocusZoomPoints>,
     pub furthest_points: Option<FocusZoomPoints>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, TS)]
 pub struct ActuatorsParametersConfig {
     // Focus channel parameters
     pub focus_channel: Option<ServoChannel>,
@@ -151,7 +151,7 @@ pub enum ScriptFunction {
     SCRIPT16 = 109,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, TS)]
 pub struct FocusZoomPoints(pub Vec<FocusZoomPoint>);
 impl FocusZoomPoints {
     pub fn to_lua(&self) -> String {
@@ -165,7 +165,7 @@ impl FocusZoomPoints {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, TS)]
 pub struct FocusZoomPoint {
     pub zoom: u32,
     pub focus: u32,
