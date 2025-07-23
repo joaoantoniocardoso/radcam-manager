@@ -269,17 +269,7 @@ const props = defineProps<{
   disabled: boolean
 }>()
 
-const servoChannelOptions: { name: string; value: ServoChannel }[] = [
-  { name: '1', value: 'SERVO1' },
-  { name: '2', value: 'SERVO2' },
-  { name: '3', value: 'SERVO3' },
-  { name: '4', value: 'SERVO4' },
-  { name: '5', value: 'SERVO5' },
-  { name: '6', value: 'SERVO6' },
-  { name: '7', value: 'SERVO7' },
-  { name: '8', value: 'SERVO8' },
-  { name: '9', value: 'SERVO9' },
-]
+const servoChannelOptions = Array.from({ length: 32 }, (_, i) => ({ name: `${i + 1}`, value: `SERVO${i + 1}` as ServoChannel }));
 
 const baseParams = ref<BaseParameterSetting>({
   hue: null,
