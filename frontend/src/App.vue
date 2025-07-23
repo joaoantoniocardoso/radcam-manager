@@ -38,15 +38,15 @@
             type="switch"
           />
         </div>
-        <template v-if="configMode === 'basic'">
+        <div v-if="configMode === 'basic'">
           <BasicSettings
             :selected-camera-uuid="selectedCameraUUID"
             :backend-api="backendAPI"
             :disabled="false"
           />
-        </template>
+        </div>
 
-        <template v-if="configMode === 'advanced'">
+        <div v-if="configMode === 'advanced'">
           <v-tabs
             v-model="tab"
             align-tabs="center"
@@ -82,7 +82,7 @@
               />
             </v-tabs-window-item>
           </v-tabs-window>
-        </template>
+        </div>
       </v-container>
     </v-main>
   </v-app>
