@@ -64,7 +64,8 @@ watch(
   () => props.expanded,
   (val) => {
     if (val !== undefined) isOpen.value = val
-  }
+  },
+  { immediate: true }
 )
 </script>
 <style scoped>

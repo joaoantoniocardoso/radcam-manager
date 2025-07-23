@@ -79,6 +79,7 @@ const toggleSwitch = (): void => {
 
 watch(
   () => props.modelValue,
-  (v) => (modelValue.value = v ?? false)
+  (v) => (modelValue.value = v ?? false),
+  { immediate: true }
 )
 </script>
