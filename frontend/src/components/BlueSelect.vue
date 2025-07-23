@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 /**
  * Option in the select
@@ -148,4 +148,19 @@ function itemTextClass(opt: OptionItem) {
   if (opt.disabled || props.disabled) return 'text-gray-500'
   return props.theme === 'dark' ? 'text-white' : 'text-black'
 }
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (!props.multiSelect) {
+      const found = props.items.find(item =>
+        item.value !== undefined ? item.value === newVal : item.name === newVal
+      )
+      selectedItem.value = found ?? { name: 'Select...' }
+    } else if (Array.isArray(newVal)) {
+      selectedValues.value = newVal
+    }
+  },
+  { immediate: true }
+)
 </script>

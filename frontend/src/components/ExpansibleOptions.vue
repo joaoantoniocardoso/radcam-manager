@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 /**
  * ExpansiblePanel component allows toggling visibility of its content.
@@ -83,6 +83,16 @@ function toggle(): void {
   isOpen.value = !isOpen.value
   emit('update:isOpen', isOpen.value)
 }
+
+watch(
+  () => props.isOpen,
+  (value) => {
+    if (value !== undefined) {
+      isOpen.value = value
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

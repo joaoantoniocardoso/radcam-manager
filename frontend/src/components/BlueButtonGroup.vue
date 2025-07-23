@@ -203,5 +203,9 @@ const openMenu = (event: MouseEvent): void => {
 
 onMounted(initSelected)
 
-watch(() => props.buttonItems.length, initSelected)
+watch(
+  () => props.buttonItems.length,
+  initSelected,
+  { deep: true, immediate: true }
+)
 </script>
