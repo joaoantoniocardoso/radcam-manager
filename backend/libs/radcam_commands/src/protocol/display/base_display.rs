@@ -198,12 +198,12 @@ pub enum BaseAutoWhiteBalanceModeValue {
 #[repr(u8)]
 pub enum BaseAutoWhiteBalanceSceneValue {
     #[default]
-    Scene0 = 0,
-    Scene1 = 1,
-    Scene2 = 2,
-    Scene3 = 3,
-    Scene4 = 4,
-    Scene5 = 5,
+    Scene1 = 0,
+    Scene2 = 1,
+    // Scene3 = 2,
+    // Scene4 = 3,
+    // Scene5 = 4,
+    // Scene6 = 5,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr, TS)]
