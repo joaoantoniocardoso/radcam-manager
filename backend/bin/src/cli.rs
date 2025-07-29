@@ -52,6 +52,10 @@ pub struct Args {
     )]
     settings_file: String,
 
+    /// Deletes settings file before starting.
+    #[arg(long)]
+    reset: bool,
+
     /// Sets the mavlink connection string
     #[arg(
         long,
@@ -159,6 +163,11 @@ pub fn settings_file() -> String {
     shellexpand::full(&settings_file)
         .expect("Failed to expand path")
         .to_string()
+}
+
+#[instrument(level = "debug")]
+pub fn is_reset() -> bool {
+    args().reset
 }
 
 #[instrument(level = "debug")]
