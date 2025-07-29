@@ -141,18 +141,7 @@ impl Manager {
         new_config: &api::ActuatorsConfig,
         overwrite: bool,
     ) -> Result<()> {
-        let mut new_config = new_config;
-        let default_config = api::ActuatorsConfig::from(&CameraActuators::default());
         let mut autopilot_reboot_required = overwrite;
-
-        // If everything is empty, set default
-        if new_config.parameters.is_none()
-            && new_config.closest_points.is_none()
-            && new_config.furthest_points.is_none()
-        {
-            debug!("Setting to default: {default_config:?}");
-            new_config = &default_config;
-        }
 
         // Parameters update
         if let Some(parameters) = &new_config.parameters {
@@ -214,6 +203,16 @@ impl Manager {
         self.settings.save().await?;
 
         Ok(())
+    }
+
+    #[instrument(level = "debug", skip(self))]
+    pub async fn reset_config(&mut self, camera_uuid: &Uuid) -> Result<()> {
+        let actuators = CameraActuators::default();
+        let config = api::ActuatorsConfig::from(&actuators);
+
+        self.settings.actuators.insert(*camera_uuid, actuators);
+
+        self.update_config(camera_uuid, &config, true).await
     }
 }
 
