@@ -161,6 +161,7 @@ pub fn settings_file() -> String {
         .to_string()
 }
 
+#[instrument(level = "debug")]
 pub fn mavlink_connection_string() -> String {
     args().mavlink.clone()
 }
@@ -180,6 +181,7 @@ pub fn default_api_version() -> u8 {
     args().default_api_version
 }
 
+#[instrument(level = "debug")]
 async fn resolve_address(address: &str) -> std::io::Result<std::net::SocketAddr> {
     let mut addrs = lookup_host(address).await?;
     addrs.next().ok_or_else(|| {
