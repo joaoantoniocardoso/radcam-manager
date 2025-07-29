@@ -136,6 +136,7 @@ fn generate_typescript_bindings_for_autopilot() -> Result<()> {
             api::ActuatorsConfig::export_to_string()?,
             api::ActuatorsParametersConfig::export_to_string()?,
             api::ServoChannel::export_to_string()?,
+            api::MountType::export_to_string()?,
             api::ScriptFunction::export_to_string()?,
             api::FocusZoomPoints::export_to_string()?,
             api::FocusZoomPoint::export_to_string()?,
