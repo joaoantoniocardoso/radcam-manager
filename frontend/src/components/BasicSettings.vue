@@ -307,6 +307,7 @@ const baseParams = ref<BaseParameterSetting>({
 })
 
 const focusAndZoomParams = ref<ActuatorsParametersConfig>({
+  camera_id: null,
   focus_channel: null,
   focus_channel_min: null,
   focus_channel_trim: null,
