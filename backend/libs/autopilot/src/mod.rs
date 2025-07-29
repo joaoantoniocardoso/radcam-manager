@@ -112,6 +112,20 @@ pub(crate) async fn control_inner(
 
             serde_json::to_value(config)?
         }
+        Action::ResetActuatorsConfig => {
+            let mut manager = MANAGER.get().unwrap().write().await;
+
+            manager.reset_config(&actuators_control.camera_uuid).await?;
+
+            let config: &api::ActuatorsConfig = &manager
+                .settings
+                .actuators
+                .get(&actuators_control.camera_uuid)
+                .context("Camera's actuators not configured")?
+                .into();
+
+            serde_json::to_value(config)?
+        }
     };
 
     Ok(res)

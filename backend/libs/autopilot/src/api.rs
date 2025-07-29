@@ -25,6 +25,8 @@ pub enum Action {
     GetActuatorsConfig,
     #[serde(rename = "setActuatorsConfig")]
     SetActuatorsConfig(ActuatorsConfig),
+    #[serde(rename = "resetActuatorsConfig")]
+    ResetActuatorsConfig,
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, Copy, TS)]
