@@ -204,7 +204,7 @@ impl MavlinkComponent {
         .await
     }
     #[instrument(level = "debug", skip(self))]
-    pub async fn restart_autopilot(&self) -> Result<()> {
+    pub async fn reboot_autopilot(&self) -> Result<()> {
         let target_system = { self.inner.read().await.system_id };
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
 
