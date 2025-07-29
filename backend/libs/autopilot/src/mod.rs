@@ -55,14 +55,29 @@ pub(crate) async fn control_inner(
             serde_json::to_value({})?
         }
         Action::GetActuatorsState => {
-            let manager = MANAGER.get().unwrap().read().await;
+            let (camera_settings_data, gimbal_manager_pitchway_data) = {
+                let manager = MANAGER.get().unwrap().read().await;
 
-            let state = &manager
+                let camera_settings_data = manager.mavlink.request_camera_settings().await?;
+
+                let gimbal_manager_pitchway_data =
+                    manager.mavlink.request_gimbal_manager_pitchyaw().await?;
+
+                (camera_settings_data, gimbal_manager_pitchway_data)
+            };
+
+            let mut manager = MANAGER.get().unwrap().write().await;
+
+            let state = &mut manager
                 .settings
                 .actuators
-                .get(&actuators_control.camera_uuid)
+                .get_mut(&actuators_control.camera_uuid)
                 .context("Camera's actuators not configured")?
                 .state;
+
+            state.focus.replace(camera_settings_data.focusLevel);
+            state.zoom.replace(camera_settings_data.zoomLevel);
+            state.tilt.replace(gimbal_manager_pitchway_data.pitch);
 
             settings::MANAGER
                 .get()

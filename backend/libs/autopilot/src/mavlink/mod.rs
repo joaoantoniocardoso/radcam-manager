@@ -7,7 +7,10 @@ use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
 use mavlink::{
     self, MavHeader, MessageData,
-    ardupilotmega::{CAMERA_SETTINGS_DATA, COMMAND_LONG_DATA, MavCmd, MavMessage, MavResult},
+    ardupilotmega::{
+        CAMERA_SETTINGS_DATA, COMMAND_LONG_DATA, GIMBAL_MANAGER_SET_PITCHYAW_DATA, MavCmd,
+        MavMessage, MavResult,
+    },
 };
 use tokio::sync::{RwLock, broadcast};
 use tracing::*;
@@ -339,6 +342,70 @@ impl MavlinkComponent {
                     {
                         if let MavMessage::CAMERA_SETTINGS(camera_settings) = recv_message {
                             return Ok(camera_settings);
+                        }
+                    }
+                    Ok(_) => continue,
+                    Err(RecvError::Closed) => {
+                        return Err(anyhow!("Receiver channel closed"));
+                    }
+                    Err(RecvError::Lagged(n)) => {
+                        warn!("Receiver lagged by {n} messages");
+                        continue;
+                    }
+                }
+            }
+        };
+
+        match tokio::time::timeout(tokio::time::Duration::from_secs(5), wait_message).await {
+            Ok(res) => res,
+            Err(_) => Err(anyhow!("Timeout waiting")),
+        }
+    }
+
+    pub async fn request_gimbal_manager_pitchyaw(
+        &self,
+    ) -> Result<GIMBAL_MANAGER_SET_PITCHYAW_DATA> {
+        let target_system = { self.inner.read().await.system_id };
+        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+
+        self.send_command(COMMAND_LONG_DATA {
+            command: MavCmd::MAV_CMD_REQUEST_MESSAGE,
+            target_system,
+            target_component,
+            confirmation: 0,
+            param1: GIMBAL_MANAGER_SET_PITCHYAW_DATA::ID as f32,
+            ..Default::default()
+        })
+        .await?;
+
+        self.wait_manager_set_pitchway_data().await
+    }
+
+    pub async fn wait_manager_set_pitchway_data(&self) -> Result<GIMBAL_MANAGER_SET_PITCHYAW_DATA> {
+        let target_system;
+        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+        let mut receiver;
+
+        {
+            let inner_guard = self.inner.read().await;
+
+            target_system = inner_guard.system_id;
+            receiver = inner_guard.get_receiver().await;
+        }
+
+        let wait_message = async {
+            loop {
+                use broadcast::error::RecvError;
+
+                match receiver.recv().await {
+                    Ok(Message::Received((recv_header, recv_message)))
+                        if recv_header.system_id == target_system
+                            && recv_header.component_id == target_component
+                            && matches!(recv_message, MavMessage::COMMAND_ACK(_)) =>
+                    {
+                        if let MavMessage::GIMBAL_MANAGER_SET_PITCHYAW(pitchway_data) = recv_message
+                        {
+                            return Ok(pitchway_data);
                         }
                     }
                     Ok(_) => continue,
