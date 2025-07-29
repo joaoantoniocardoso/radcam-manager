@@ -191,7 +191,22 @@ impl Manager {
 
         autopilot_reboot_required |= export_script(&self.autopilot_scripts_file, overwrite).await?;
         autopilot_reboot_required |= self.mavlink.enable_lua_script(overwrite).await?;
+        self.mavlink.reload_lua_scripts(overwrite).await?;
 
+        if autopilot_reboot_required {
+            self.mavlink.restart_autopilot().await?;
+        }
+
+        self.settings.save().await?;
+
+        Ok(())
+    }
+
+    pub async fn export_script(&mut self) -> Result<()> {
+        export_script(&self.autopilot_scripts_file, true).await?;
+        self.mavlink.reload_lua_scripts(true).await?;
+
+        let autopilot_reboot_required = self.mavlink.enable_lua_script(true).await?;
         if autopilot_reboot_required {
             self.mavlink.restart_autopilot().await?;
         }
