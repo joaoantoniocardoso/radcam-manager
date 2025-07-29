@@ -161,12 +161,19 @@ impl Settings {
 
 /// Constructs our manager, Should be done inside main
 #[instrument(level = "debug")]
-pub async fn init(settings_file: String) -> Result<()> {
+pub async fn init(settings_file: String, reset: bool) -> Result<()> {
     let settings_path = Path::new(&settings_file);
-    let settings = match Settings::from_path(settings_path).await {
-        Ok(settings) => settings,
-        Err(error) => {
+    let settings = match (reset, Settings::from_path(settings_path).await) {
+        (false, Ok(settings)) => settings,
+        (false, Err(error)) => {
             warn!("Failed reading settings file: {error:?}. Using empty settings.");
+
+            Settings::try_new(settings_path.to_path_buf(), IndexMap::default()).await?
+        }
+        (true, _) => {
+            warn!(
+                "Ignoring previous settings files because `--reset` CLI arg was used. Using empty settings."
+            );
 
             Settings::try_new(settings_path.to_path_buf(), IndexMap::default()).await?
         }
