@@ -320,6 +320,11 @@ impl From<ActuatorsParametersConfig> for ActuatorsParameters {
     }
 }
 
+/// 0 is "None"
+pub const DISABLED_CAMERA_TYPE: u8 = 0;
+/// 1 is "Servo"
+pub const SERVO_CAMERA_TYPE: u8 = 1;
+
 /// 92 is "CameraFocus"
 pub const FOCUS_CHANNEL_FUNCTION: u8 = 92;
 

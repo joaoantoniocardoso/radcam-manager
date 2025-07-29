@@ -1,4 +1,5 @@
 mod calibration;
+mod camera;
 mod focus;
 mod macros;
 mod script;
@@ -155,7 +156,9 @@ impl Manager {
         // Parameters update
         if let Some(parameters) = &new_config.parameters {
             autopilot_reboot_required |= self
-                .update_script_parameters(camera_uuid, parameters)
+                .update_camera_parameters(camera_uuid, parameters, overwrite)
+                .await?;
+
                 .await?;
 
             autopilot_reboot_required |= self
