@@ -45,7 +45,7 @@ impl Manager {
                             if old_value != new_value {
                                 info!(
                                     "focus_channel (SERVO{}) changed from {:?} to {new_value:?}",
-                                    current_parameters.script_channel as u8, old_value
+                                    current_parameters.focus_channel as u8, old_value
                                 );
                                 autopilot_reboot_required = true;
                             }
