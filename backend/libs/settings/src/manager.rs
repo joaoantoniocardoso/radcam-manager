@@ -55,8 +55,6 @@ impl Settings {
                 }
             };
 
-            debug!("Loaded settings from file: {path:?}");
-
             let settings = Settings {
                 path: path.to_owned(),
                 inner,
