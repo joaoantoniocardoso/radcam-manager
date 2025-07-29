@@ -93,7 +93,7 @@ pub(crate) async fn control_inner(
             let mut manager = MANAGER.get().unwrap().write().await;
 
             manager
-                .update_config(&actuators_control.camera_uuid, new_config)
+                .update_config(&actuators_control.camera_uuid, new_config, false)
                 .await?;
 
             let config: &api::ActuatorsConfig = &manager

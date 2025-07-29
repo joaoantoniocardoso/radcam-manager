@@ -139,10 +139,11 @@ impl Manager {
         &mut self,
         camera_uuid: &Uuid,
         new_config: &api::ActuatorsConfig,
+        overwrite: bool,
     ) -> Result<()> {
         let mut new_config = new_config;
         let default_config = api::ActuatorsConfig::from(&CameraActuators::default());
-        let mut autopilot_reboot_required = false;
+        let mut autopilot_reboot_required = overwrite;
 
         // If everything is empty, set default
         if new_config.parameters.is_none()
@@ -159,29 +160,37 @@ impl Manager {
                 .update_camera_parameters(camera_uuid, parameters, overwrite)
                 .await?;
 
+            autopilot_reboot_required |= self
+                .update_script_parameters(camera_uuid, parameters, overwrite)
                 .await?;
 
             autopilot_reboot_required |= self
-                .update_focus_parameters(camera_uuid, parameters)
+                .update_focus_parameters(camera_uuid, parameters, overwrite)
                 .await?;
 
-            autopilot_reboot_required |=
-                self.update_zoom_parameters(camera_uuid, parameters).await?;
+            autopilot_reboot_required |= self
+                .update_zoom_parameters(camera_uuid, parameters, overwrite)
+                .await?;
 
-            autopilot_reboot_required |=
-                self.update_tilt_parameters(camera_uuid, parameters).await?;
+            autopilot_reboot_required |= self
+                .update_tilt_parameters(camera_uuid, parameters, overwrite)
+                .await?;
         }
 
         // Callibration update
         if let Some(points) = &new_config.closest_points {
-            autopilot_reboot_required |= self.update_closest_points(camera_uuid, points).await?;
+            autopilot_reboot_required |= self
+                .update_closest_points(camera_uuid, points, overwrite)
+                .await?;
         }
         if let Some(points) = &new_config.furthest_points {
-            autopilot_reboot_required |= self.update_furthest_points(camera_uuid, points).await?;
+            autopilot_reboot_required |= self
+                .update_furthest_points(camera_uuid, points, overwrite)
+                .await?;
         }
 
-        autopilot_reboot_required |= export_script(&self.autopilot_scripts_file).await?;
-        autopilot_reboot_required |= self.mavlink.enable_lua_script().await?;
+        autopilot_reboot_required |= export_script(&self.autopilot_scripts_file, overwrite).await?;
+        autopilot_reboot_required |= self.mavlink.enable_lua_script(overwrite).await?;
 
         if autopilot_reboot_required {
             self.mavlink.restart_autopilot().await?;
