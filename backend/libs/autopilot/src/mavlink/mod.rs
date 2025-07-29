@@ -188,6 +188,22 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(self))]
+    pub async fn reload_lua_scripts(&self, overwrite: bool) -> Result<()> {
+        let target_system = { self.inner.read().await.system_id };
+        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+
+        const SCRIPTING_CMD_STOP_AND_RESTART: u8 = 3;
+        self.send_command(COMMAND_LONG_DATA {
+            target_system,
+            target_component,
+            confirmation: 0,
+            command: MavCmd::MAV_CMD_SCRIPTING,
+            param1: SCRIPTING_CMD_STOP_AND_RESTART as f32,
+            ..Default::default()
+        })
+        .await
+    }
+    #[instrument(level = "debug", skip(self))]
     pub async fn restart_autopilot(&self) -> Result<()> {
         let target_system = { self.inner.read().await.system_id };
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;

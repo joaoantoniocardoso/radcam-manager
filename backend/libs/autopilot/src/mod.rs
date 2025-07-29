@@ -47,6 +47,13 @@ pub(crate) async fn control_inner(
     debug!("Got control query: {actuators_control:#?}");
 
     let res = match &actuators_control.action {
+        Action::ExportLuaScript => {
+            let mut manager = MANAGER.get().unwrap().write().await;
+
+            manager.export_script().await?;
+
+            serde_json::to_value({})?
+        }
         Action::GetActuatorsState => {
             let manager = MANAGER.get().unwrap().read().await;
 
