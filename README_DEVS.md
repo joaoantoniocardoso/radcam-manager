@@ -17,7 +17,7 @@ There are a few options:
 1. Find the RadCam Manager on the Extensions Store, and install it.
 2. A "RadCam" should appear on the left menu after a few seconds.
 3. Click the "RadCam" menu item to access the application's interface.
-4. ~~[WIP] Open Cockpit, there should be an available configured iframe~~
+4. Open Cockpit, there should be an available configured iframe
 
 ### As a BlueOS extension, manually:
 
@@ -37,8 +37,10 @@ There are a few options:
     "8080/tcp": {}
   },
   "HostConfig": {
-    "Binds":[
-      "/var/logs/blueos/extensions/radcam-manager:/logs"
+    "Binds": [
+      "/var/logs/blueos/extensions/radcam-manager:/logs",
+      "/usr/blueos/extensions/radcam-manager:/app",
+      "/root/.config/blueos/ardupilot-manager/firmware/scripts:/scripts"
     ],
     "ExtraHosts": [
       "blueos.internal:host-gateway"
@@ -52,7 +54,16 @@ There are a few options:
     }
   },
   "entrypoint": [
-    "./radcam-manager", "--verbose", "--web-server", "0.0.0.0:8080", "--mcm-address", "blueos.internal:6020"
+    "./radcam-manager",
+    "--verbose",
+    "--web-server", "0.0.0.0:8080",
+    "--mcm-address", "blueos.internal:6020",
+    "--mavlink", "tcpout:blueos.internal:5777",
+    "--mavlink-system-id", "1",
+    "--mavlink-component-id", "56",
+    "--log-path", "/logs",
+    "--settings-file", "/app/settings.json",
+    "--autopilot-scripts-file", "/scripts/radcam.lua"
   ]
 }
 ```
@@ -70,5 +81,8 @@ docker run --rm -it --net=host radcam-manager:latest --help
 ./backend/target/radcam-manager --help
 ```
 
-**NOTE**: this software requires a [Mavlink Camera Manager](http://github.com/mavlink/mavlink-camera-manager) instance running somewhere. It can configurable using the `--mcm-address <MCM_ADDRESS>` command line argument.
+**NOTE**: this software requires:
+- [Mavlink Camera Manager](http://github.com/mavlink/mavlink-camera-manager) instance running somewhere. It can configurable using the `--mcm-address <MCM_ADDRESS>` command line argument.
+- Some MAVLink-compatible autopilot firmware running with version `>=4.7.0`
+- Some MAVLink router endpoint, configurable using the `--mavlink` command line argument.
 
