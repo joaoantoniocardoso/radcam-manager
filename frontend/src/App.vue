@@ -98,8 +98,8 @@ import BasicSettings from '@/components/BasicSettings.vue'
 import BlueButtonGroup from '@/components/BlueButtonGroup.vue'
 
 const tab = ref(null)
-const backendAddress = window.location.host.toString()
-const backendAPI = ref(`http://${backendAddress}/v1`)
+// const backendAPI = ref(`http://192.168.2.2:<radcam-extension-port>/v1`)  // For local frontend development:
+const backendAPI = ref('v1')
 const cameras = ref<Camera[]>([])
 const selectedCameraUUID = ref<string | null>(null)
 
