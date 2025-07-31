@@ -34,7 +34,7 @@ tokio = { version = "1.47.0", default-features = false }
 tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"] }
 tower-http = { version = "0.6", features = ["normalize-path", "trace", "cors"] }
 tracing = { version = "0.1.41", features = ["log", "async-await"] }
-ts-rs = { version = "10.1.0", features = ["serde_json", "no-serde-warnings", "indexmap-impl", "url-impl", "uuid-impl"] }
+ts-rs = { version = "11.0.1", features = ["serde_json", "no-serde-warnings", "indexmap-impl", "url-impl", "uuid-impl"] }
 tsync = { git = "https://github.com/AnthonyMichaelTDM/tsync.git", rev = "01f56be" }
 url = { version = "2.5.4", features = ["serde"] }
 url_params_serializer = "0.1.1"
