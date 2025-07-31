@@ -20,14 +20,12 @@ echo "Updating dockerfile..."
 DOCKERFILE="dockerfile"
 sed -i "s/\(LABEL version=\"\)[^\"]*\"/\1${NEW_VERSION}\"/" "$DOCKERFILE"
 
-# Update all Cargo.toml files
-echo "Updating Cargo.toml files..."
-mapfile -t CARGO_TOML_FILES < <(find . -type f -name 'Cargo.toml')
-for file in "${CARGO_TOML_FILES[@]}"; do
-    sed -i '/^\[package\]/, /^\[/ {
-        s/^\(\s*version = "\)[^"]*"/\1'"${NEW_VERSION}"'"/
-    }' "$file"
-done
+# Update workspace Cargo.toml file:
+echo "Updating workspace Cargo.toml file..."
+CARGO_TOML_FILE="Cargo.toml"
+sed -i '/^\[package\]/, /^\[/ {
+    s/^\(\s*version = "\)[^"]*"/\1'"${NEW_VERSION}"'"/
+}' "$CARGO_TOML_FILE"
 
 # Update frontend/package.json
 echo "Updating frontend/package.json..."
