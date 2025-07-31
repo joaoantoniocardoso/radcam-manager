@@ -10,7 +10,13 @@ members = [
     "backend/bin",
     "backend/bindings_generator",
 ]
-resolver = "2"
+
+[workspace.package]
+version = "0.2.0-beta.1"
+edition = "2024"
+license = "MIT"
+authors = ["João Antônio Cardoso"]
+homepage = "https://github.com/bluerobotics/radcam-manager"
 
 [profile.release]
 strip = true

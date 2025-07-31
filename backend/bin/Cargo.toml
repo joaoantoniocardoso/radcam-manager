@@ -1,8 +1,10 @@
 [package]
 name = "radcam-manager"
-version = "0.2.0-beta.1"
-edition = "2024"
-license = "MIT"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
 default-run = "radcam-manager"
 
 [dependencies]
