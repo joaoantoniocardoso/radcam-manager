@@ -14,13 +14,13 @@ radcam_manager = { path="../libs/radcam_manager" }
 settings = { path="../libs/settings" }
 web_client = { path="../libs/web_client" }
 
-anyhow = "1.0.98"
-chrono = { version = "0.4.40", default-features = false }
+anyhow = { workspace = true }
+chrono = { workspace = true }
 clap = { version = "4.5.26", features = ["derive"] }
-once_cell = "1.21.3"
+once_cell = { workspace = true }
 shellexpand = "3.1.1"
-tokio = { version = "1.44.2", features = ["full"] }
-tracing = { version = "0.1.41", features = ["log", "async-await"] }
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
 
 [build-dependencies]
 vergen-gix = { version = "1.0.9", default-features = false, features = ["build", "cargo"] }

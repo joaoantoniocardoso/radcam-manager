@@ -19,6 +19,29 @@ license = "MIT"
 authors = ["João Antônio Cardoso"]
 homepage = "https://github.com/bluerobotics/radcam-manager"
 
+[workspace.dependencies]
+anyhow = "1.0.98"
+chrono = { version = "0.4.40", default-features = false, features = ["clock"]}
+futures = "0.3.31"
+indexmap = { version = "2.9.0", features = ["serde"] }
+once_cell = "1.21.3"
+semver = "1.0.26"
+serde = { version = "1.0.219", features = ["rc"] }
+serde_derive = "1.0.219"
+serde_repr = "0.1.20"
+serde_json = "1.0.140"
+tokio = { version = "1.44.2", default-features = false }
+tokio-stream = { version = "0.1.17", default-features = false, features = ["fs"] }
+tower-http = { version = "0.6", features = ["normalize-path", "trace", "cors"] }
+tracing = { version = "0.1.41", features = ["log", "async-await"] }
+ts-rs = { version = "10.1.0", features = ["serde_json", "no-serde-warnings", "indexmap-impl", "url-impl", "uuid-impl"] }
+tsync = { git = "https://github.com/AnthonyMichaelTDM/tsync.git", rev = "01f56be" }
+url = { version = "2.5.4", features = ["serde"] }
+url_params_serializer = "0.1.1"
+uuid = { version = "1.16.0", features = ["v5", "serde"] }
+reqwest = { version = "0.12.15", default-features = false, features = ["http2", "json", "rustls-tls"] }
+regex = { version = "1.11.1", default-features = false, features = ["std"] }
+
 [profile.release]
 strip = true
 
