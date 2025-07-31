@@ -106,7 +106,14 @@ async fn authenticate_radcams(mcm_address: &SocketAddr) {
             let known_cameras = cameras().await;
 
             for camera in &radcams {
-                if known_cameras.contains_key(&camera.uuid) {
+                if let Some(known_camera) = known_cameras.get(&camera.uuid) {
+                    if known_camera != camera {
+                        if let Err(error) = add_camera(camera).await {
+                            debug!("Failed updating camera {camera:?}: {error:?}");
+                            continue;
+                        }
+                    }
+
                     break;
                 }
 
