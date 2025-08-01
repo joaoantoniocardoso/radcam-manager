@@ -59,15 +59,6 @@ pub(crate) async fn control_inner(
 
             let state = manager.get_state(&actuators_control.camera_uuid).await?;
 
-            settings::MANAGER
-                .get()
-                .unwrap()
-                .write()
-                .await
-                .settings
-                .save()
-                .await?;
-
             serde_json::to_value(state)?
         }
         Action::SetActuatorsState(new_state) => {
@@ -122,6 +113,15 @@ pub(crate) async fn control_inner(
             serde_json::to_value(config)?
         }
     };
+
+    settings::MANAGER
+        .get()
+        .unwrap()
+        .write()
+        .await
+        .settings
+        .save()
+        .await?;
 
     Ok(res)
 }
