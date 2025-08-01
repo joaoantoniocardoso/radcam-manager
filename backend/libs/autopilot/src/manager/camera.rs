@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     api,
     manager::Manager,
-    parameters::{self, ParamType},
+    parameters::{CameraType, ParamType},
 };
 
 impl Manager {
@@ -35,7 +35,7 @@ impl Manager {
                 let old_value = param.value;
                 param
                     .value
-                    .set_value(ParamType::UINT8(parameters::DISABLED_CAMERA_TYPE), encoding)?;
+                    .set_value(ParamType::UINT8(CameraType::None as u8), encoding)?;
                 let new_value = param.value;
 
                 if old_value != new_value {
@@ -66,7 +66,7 @@ impl Manager {
                 let old_value = param.value;
                 param
                     .value
-                    .set_value(ParamType::UINT8(parameters::SERVO_CAMERA_TYPE), encoding)?;
+                    .set_value(ParamType::UINT8(CameraType::Servo as u8), encoding)?;
                 let new_value = param.value;
 
                 if overwrite || old_value != new_value {

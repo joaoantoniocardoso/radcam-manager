@@ -89,7 +89,11 @@ macro_rules! generate_update_mount_param_function {
 
             let encoding = self.mavlink.encoding().await;
 
-            let param_name = format!("{:?}_{}", parameters::TILT_CHANNEL_FUNCTION, "PITCH_MAX");
+            let mount_id = match current_parameters.camera_id {
+                api::CameraID::CAM1 => TiltChannelFunction::MNT1,
+                api::CameraID::CAM2 => TiltChannelFunction::MNT2,
+            };
+            let param_name = format!("{mount_id:?}_{}", $param_suffix);
 
             let new_value = match (parameters.$field_name, force_apply) {
                 (Some(value), _) => value,
