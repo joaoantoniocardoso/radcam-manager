@@ -1,9 +1,10 @@
 use anyhow::{Result, anyhow};
 use mavlink::ardupilotmega::{MavParamType, PARAM_VALUE_DATA};
+use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::{self, ActuatorsParametersConfig, TiltChannelFunction},
+    api::{self, ActuatorsParametersConfig},
     mavlink::parameters::ParamEncodingType,
 };
 
@@ -320,24 +321,38 @@ impl From<ActuatorsParametersConfig> for ActuatorsParameters {
     }
 }
 
-/// 0 is "None"
-pub const DISABLED_CAMERA_TYPE: u8 = 0;
-/// 1 is "Servo"
-pub const SERVO_CAMERA_TYPE: u8 = 1;
+#[repr(i16)]
+#[derive(Debug, Clone, Copy, PartialEq, TryFromPrimitive)]
+pub enum ChannelFunction {
+    Disabled = 0,
+    Mount1Pitch = 7,
+    Mount2Pitch = 13,
+    CameraFocus = 92,
+    CameraZoom = 180,
+    Script1 = 94,
+    Script2 = 95,
+    Script3 = 96,
+    Script4 = 97,
+    Script5 = 98,
+    Script6 = 99,
+    Script7 = 100,
+    Script8 = 101,
+    Script9 = 102,
+    Script10 = 103,
+    Script11 = 104,
+    Script12 = 105,
+    Script13 = 106,
+    Script14 = 107,
+    Script15 = 108,
+    Script16 = 109,
+}
 
-/// 92 is "CameraFocus"
-pub const FOCUS_CHANNEL_FUNCTION: u8 = 92;
-
-/// 180 is "CameraZoom"
-pub const ZOOM_CHANNEL_FUNCTION: u8 = 180;
-
-/// 94 is "SCRIPT1"
-pub const SCRIPT_CHANNEL_FUNCTION: u8 = 94;
-
-pub const TILT_CHANNEL_FUNCTION: TiltChannelFunction = TiltChannelFunction::MNT1;
-
-/// 0 is Disbled
-pub const DISABLED_CHANNEL_FUNCTION: u8 = 0;
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CameraType {
+    None = 0,
+    Servo = 1,
+}
 
 pub const CLOSEST_POINTS: &[api::FocusZoomPoint] = &[
     api::FocusZoomPoint {
