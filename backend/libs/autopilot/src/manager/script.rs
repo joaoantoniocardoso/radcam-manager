@@ -218,6 +218,23 @@ local furthest_points = {
 -- SRV_Channels:set_range(zoom_channel, 1000)
 -- SRV_Channels:set_output_scaled(zoom_channel, 0)
 
+local function set_zoom_focus_to_trim()
+    local focus_channel = SRV_Channels:find_channel(92)
+    local focus_max = param:get("SERVO" .. focus_channel + 1 .. "_MAX")
+    local focus_min = param:get("SERVO" .. focus_channel + 1 .. "_MIN")
+    local focus_trim = param:get("SERVO" .. focus_channel + 1 .. "_TRIM")
+    local focus_scaled = 1000 * (focus_trim - focus_min) / (focus_max - focus_min)
+    SRV_Channels:set_output_scaled(K_FOCUS, focus_scaled)
+
+    local zoom_channel = SRV_Channels:find_channel(180)
+    local zoom_max = param:get("SERVO" .. zoom_channel + 1 .. "_MAX")
+    local zoom_min = param:get("SERVO" .. zoom_channel + 1 .. "_MIN")
+    local zoom_trim = param:get("SERVO" .. zoom_channel + 1 .. "_TRIM")
+
+    local zoom_scaled = 1000 * (zoom_trim - zoom_min) / (zoom_max - zoom_min)
+    SRV_Channels:set_output_scaled(K_ZOOM, zoom_scaled)
+end
+
 -- Linear interpolation function
 local function lerp(x, x1, y1, x2, y2)
     return y1 + (x - x1) * (y2 - y1) / (x2 - x1)
@@ -258,13 +275,20 @@ local function calculate_focus()
     return math.floor(closest_focus + focus_delta * (furthest_focus - closest_focus))
 end
 
+function start()
+    if millis() <= 100000 then
+        set_zoom_focus_to_trim()
+    end
+    return update, 100
+end
+
 function update()
     local focus_pos = calculate_focus()
     SRV_Channels:set_output_pwm(K_SCRIPTING1, focus_pos)
     return update, 100
 end
 
-return update, 100
+return start, 1000
     "#;
 
     Ok(file.to_string())
