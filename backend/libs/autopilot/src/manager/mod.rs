@@ -61,6 +61,33 @@ impl State {
 
 impl Manager {
     #[instrument(level = "debug", skip(self))]
+    pub async fn get_state(&mut self, camera_uuid: &Uuid) -> Result<api::ActuatorsState> {
+        let actuators = self
+            .settings
+            .actuators
+            .get_mut(camera_uuid)
+            .context("Camera not configured")?;
+
+        let camera_settings = self
+            .mavlink
+            .request_camera_settings((&(actuators).parameters.camera_id).into())
+            .await
+            .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
+
+        let current_state = api::ActuatorsState {
+            focus: Some(camera_settings.focusLevel),
+            zoom: Some(camera_settings.zoomLevel),
+            tilt: None, // TODO: Fix this after implementing the tilt API
+        };
+
+        actuators.state = current_state;
+
+        self.settings.save().await?;
+
+        Ok(current_state)
+    }
+
+    #[instrument(level = "debug", skip(self))]
     pub async fn update_state(
         &mut self,
         camera_uuid: &Uuid,
@@ -68,7 +95,18 @@ impl Manager {
     ) -> Result<api::ActuatorsState> {
         use ::mavlink::ardupilotmega::{COMMAND_LONG_DATA, CameraZoomType, MavCmd, SetFocusType};
 
-        let mut current_state = api::ActuatorsState::default();
+        let actuators = self
+            .settings
+            .actuators
+            .get_mut(camera_uuid)
+            .context("Camera not configured")?;
+
+        // TODO: we should just wait before sending commands
+        // let wait_camera_settings_handle = tokio::spawn({
+        //     let inner = self.inner.clone();
+
+        //     Self::wait_camera_settings(inner)
+        // });
 
         if let Some(focus) = new_state.focus {
             self.mavlink
@@ -84,15 +122,6 @@ impl Manager {
                 })
                 .await
                 .context("Failed sending MAV_CMD_SET_CAMERA_FOCUS command")?;
-
-            let state = self
-                .mavlink
-                .wait_camera_settings()
-                .await
-                .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
-
-            current_state.focus = none_if_nan(state.focusLevel);
-            current_state.zoom = none_if_nan(state.zoomLevel);
         }
 
         if let Some(zoom) = new_state.zoom {
@@ -109,29 +138,26 @@ impl Manager {
                 })
                 .await
                 .context("Failed sending MAV_CMD_SET_CAMERA_ZOOM command")?;
+        }
 
-            let state = self
-                .mavlink
-                .wait_camera_settings()
-                .await
-                .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_ZOOM")?;
+        let camera_settings = self
+            .mavlink
+            .request_camera_settings((&actuators.parameters.camera_id).into())
+            .await
+            .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
 
-            current_state.focus = none_if_nan(state.focusLevel);
-            current_state.zoom = none_if_nan(state.zoomLevel);
+        if new_state.focus.is_some() || new_state.zoom.is_some() {
+            actuators.state.focus = none_if_nan(camera_settings.focusLevel);
+            actuators.state.zoom = none_if_nan(camera_settings.zoomLevel);
         }
 
         if let Some(_tilt) = new_state.tilt {
             warn!("TILT NOT IMPLEMENTED!");
         }
 
-        self.settings
-            .actuators
-            .entry(*camera_uuid)
-            .and_modify(|v| v.state = current_state);
-
         self.settings.save().await?;
 
-        Ok(current_state)
+        Ok(*new_state)
     }
 
     #[instrument(level = "debug", skip(self))]
