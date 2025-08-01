@@ -1,11 +1,12 @@
 use anyhow::Result;
+use settings::TiltChannelFunction;
 use tracing::*;
 use uuid::Uuid;
 
 use crate::{
     api, generate_update_channel_param_function, generate_update_mount_param_function,
     manager::Manager,
-    parameters::{self, ParamType},
+    parameters::{ChannelFunction, ParamType},
 };
 
 impl Manager {
@@ -33,10 +34,9 @@ impl Manager {
 
                 let mut param = self.mavlink.get_param(&param_name, false).await?;
                 let old_value = param.value;
-                param.value.set_value(
-                    ParamType::UINT8(parameters::DISABLED_CHANNEL_FUNCTION),
-                    encoding,
-                )?;
+                param
+                    .value
+                    .set_value(ParamType::INT16(ChannelFunction::Disabled as i16), encoding)?;
                 let new_value = param.value;
 
                 if old_value != new_value {
@@ -63,12 +63,16 @@ impl Manager {
             {
                 let param_name = format!("SERVO{}_FUNCTION", *channel as u8);
 
+                let function = match current_parameters.camera_id {
+                    api::CameraID::CAM1 => ChannelFunction::Mount1Pitch,
+                    api::CameraID::CAM2 => ChannelFunction::Mount2Pitch,
+                };
+
                 let mut param = self.mavlink.get_param(&param_name, false).await?;
                 let old_value = param.value;
-                param.value.set_value(
-                    ParamType::UINT8(parameters::TILT_CHANNEL_FUNCTION as u8),
-                    encoding,
-                )?;
+                param
+                    .value
+                    .set_value(ParamType::INT16(function as i16), encoding)?;
                 let new_value = param.value;
 
                 if overwrite || old_value != new_value {
@@ -178,7 +182,11 @@ impl Manager {
 
         let encoding = self.mavlink.encoding().await;
 
-        let param_name = format!("{:?}_{}", parameters::TILT_CHANNEL_FUNCTION, "TYPE");
+        let mount_id = match current_parameters.camera_id {
+            api::CameraID::CAM1 => TiltChannelFunction::MNT1,
+            api::CameraID::CAM2 => TiltChannelFunction::MNT2,
+        } as u8;
+        let param_name = format!("MNT{mount_id}_TYPE");
 
         let new_value = match (parameters.tilt_mnt_pitch_max, force_apply) {
             (Some(value), _) => value,

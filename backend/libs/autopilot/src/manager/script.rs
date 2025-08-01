@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     api, generate_update_channel_param_function,
     manager::Manager,
-    parameters::{self, ParamType},
+    parameters::{ChannelFunction, ParamType},
 };
 
 impl Manager {
@@ -34,10 +34,9 @@ impl Manager {
 
                 let mut param = self.mavlink.get_param(&param_name, false).await?;
                 let old_value = param.value;
-                param.value.set_value(
-                    ParamType::UINT8(parameters::DISABLED_CHANNEL_FUNCTION),
-                    encoding,
-                )?;
+                param
+                    .value
+                    .set_value(ParamType::INT16(ChannelFunction::Disabled as i16), encoding)?;
                 let new_value = param.value;
 
                 if old_value != new_value {
@@ -64,12 +63,14 @@ impl Manager {
             {
                 let param_name = format!("SERVO{}_FUNCTION", *channel as u8);
 
+                // The script servo input is the values from the CameraFocus
+                let function = ChannelFunction::CameraFocus;
+
                 let mut param = self.mavlink.get_param(&param_name, false).await?;
                 let old_value = param.value;
-                param.value.set_value(
-                    ParamType::UINT8(parameters::SCRIPT_CHANNEL_FUNCTION),
-                    encoding,
-                )?;
+                param
+                    .value
+                    .set_value(ParamType::INT16(function as i16), encoding)?;
                 let new_value = param.value;
 
                 if overwrite || old_value != new_value {
