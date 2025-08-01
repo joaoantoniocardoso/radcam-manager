@@ -136,10 +136,7 @@ impl Settings {
             .await
             .with_context(|| format!("Failed to write settings to {settings_file:?}"))?;
 
-        debug!(
-            "Wrote new settings to {settings_file:?}:\n{:#?}",
-            self.inner
-        );
+        debug!("Wrote new settings to {settings_file:?}:\n{:?}", self.inner);
 
         Ok(())
     }
