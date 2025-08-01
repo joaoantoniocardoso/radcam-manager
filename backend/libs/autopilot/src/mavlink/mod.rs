@@ -6,9 +6,10 @@ use std::sync::Arc;
 use anyhow::{Result, anyhow};
 use indexmap::IndexMap;
 use mavlink::{
-    self, MavHeader, MessageData,
+    self, MavHeader, Message as _, MessageData,
     ardupilotmega::{CAMERA_SETTINGS_DATA, COMMAND_LONG_DATA, MavCmd, MavMessage, MavResult},
 };
+use settings::CameraID;
 use tokio::sync::{RwLock, broadcast};
 use tracing::*;
 
@@ -22,7 +23,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct MavlinkComponent {
-    inner: Arc<RwLock<ComponentInner>>,
+    pub(crate) inner: Arc<RwLock<ComponentInner>>,
     sender_task_handle: tokio::task::JoinHandle<()>,
     receiver_task_handle: tokio::task::JoinHandle<()>,
     params_sync_task_handle: tokio::task::JoinHandle<()>,
@@ -298,10 +299,20 @@ impl MavlinkComponent {
         Ok(())
     }
 
-    pub async fn request_camera_settings(&self) -> Result<CAMERA_SETTINGS_DATA> {
+    pub async fn request_camera_settings(
+        &self,
+        camera_id: CameraID,
+    ) -> Result<CAMERA_SETTINGS_DATA> {
         let target_system = { self.inner.read().await.system_id };
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
 
+        let wait_camera_settings_handle = tokio::spawn({
+            let inner = self.inner.clone();
+
+            Self::wait_camera_settings(inner)
+        });
+
+        // TODO: use camera_id to get from the specific camera
         self.send_command(COMMAND_LONG_DATA {
             command: MavCmd::MAV_CMD_REQUEST_MESSAGE,
             target_system,
@@ -312,16 +323,18 @@ impl MavlinkComponent {
         })
         .await?;
 
-        self.wait_camera_settings().await
+        wait_camera_settings_handle.await?
     }
 
-    pub async fn wait_camera_settings(&self) -> Result<CAMERA_SETTINGS_DATA> {
+    pub async fn wait_camera_settings(
+        inner: Arc<RwLock<ComponentInner>>,
+    ) -> Result<CAMERA_SETTINGS_DATA> {
         let target_system;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
         let mut receiver;
 
         {
-            let inner_guard = self.inner.read().await;
+            let inner_guard = inner.read().await;
 
             target_system = inner_guard.system_id;
             receiver = inner_guard.get_receiver().await;
@@ -335,7 +348,7 @@ impl MavlinkComponent {
                     Ok(Message::Received((recv_header, recv_message)))
                         if recv_header.system_id == target_system
                             && recv_header.component_id == target_component
-                            && matches!(recv_message, MavMessage::COMMAND_ACK(_)) =>
+                            && recv_message.message_id() == CAMERA_SETTINGS_DATA::ID =>
                     {
                         if let MavMessage::CAMERA_SETTINGS(camera_settings) = recv_message {
                             return Ok(camera_settings);
