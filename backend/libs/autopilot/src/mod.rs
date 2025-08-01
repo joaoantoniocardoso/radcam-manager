@@ -55,14 +55,9 @@ pub(crate) async fn control_inner(
             serde_json::to_value({})?
         }
         Action::GetActuatorsState => {
-            let manager = MANAGER.get().unwrap().read().await;
+            let mut manager = MANAGER.get().unwrap().write().await;
 
-            let state = &manager
-                .settings
-                .actuators
-                .get(&actuators_control.camera_uuid)
-                .context("Camera's actuators not configured")?
-                .state;
+            let state = manager.get_state(&actuators_control.camera_uuid).await?;
 
             settings::MANAGER
                 .get()

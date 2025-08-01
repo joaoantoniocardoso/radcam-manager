@@ -61,6 +61,30 @@ impl State {
 
 impl Manager {
     #[instrument(level = "debug", skip(self))]
+    pub async fn get_state(&mut self, camera_uuid: &Uuid) -> Result<api::ActuatorsState> {
+        let camera_settings = self
+            .mavlink
+            .request_camera_settings()
+            .await
+            .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
+
+        let current_state = api::ActuatorsState {
+            focus: Some(camera_settings.focusLevel),
+            zoom: Some(camera_settings.zoomLevel),
+            tilt: None, // TODO: Fix this after implementing the tilt API
+        };
+
+        self.settings
+            .actuators
+            .entry(*camera_uuid)
+            .and_modify(|v| v.state = current_state);
+
+        self.settings.save().await?;
+
+        Ok(current_state)
+    }
+
+    #[instrument(level = "debug", skip(self))]
     pub async fn update_state(
         &mut self,
         camera_uuid: &Uuid,
@@ -84,15 +108,6 @@ impl Manager {
                 })
                 .await
                 .context("Failed sending MAV_CMD_SET_CAMERA_FOCUS command")?;
-
-            let state = self
-                .mavlink
-                .wait_camera_settings()
-                .await
-                .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
-
-            current_state.focus = none_if_nan(state.focusLevel);
-            current_state.zoom = none_if_nan(state.zoomLevel);
         }
 
         if let Some(zoom) = new_state.zoom {
@@ -109,12 +124,14 @@ impl Manager {
                 })
                 .await
                 .context("Failed sending MAV_CMD_SET_CAMERA_ZOOM command")?;
+        }
 
+        if new_state.focus.is_some() || new_state.zoom.is_some() {
             let state = self
                 .mavlink
                 .wait_camera_settings()
                 .await
-                .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_ZOOM")?;
+                .context("Failed waiting for CAMERA_SETTINGS after MAV_CMD_SET_CAMERA_FOCUS")?;
 
             current_state.focus = none_if_nan(state.focusLevel);
             current_state.zoom = none_if_nan(state.zoomLevel);
