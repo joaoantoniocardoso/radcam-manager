@@ -162,7 +162,7 @@ pub fn autopilot_scripts_file() -> String {
 pub fn settings_file() -> String {
     let settings_file = args().settings_file.clone();
 
-    shellexpand::full(&*&settings_file)
+    shellexpand::full(&settings_file)
         .expect("Failed to expand path")
         .to_string()
 }
