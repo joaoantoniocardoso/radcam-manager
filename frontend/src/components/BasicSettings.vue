@@ -281,6 +281,8 @@ import Loading from './Loading.vue'
 import { VideoChannelValue, type BaseParameterSetting, type VideoParameterSettings, type VideoResolutionValue } from '@/bindings/radcam'
 import axios from 'axios'
 import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState } from '@/bindings/autopilot'
+import { applyNonNull } from '@/utils/jsonUtils'
+
 
 const props = defineProps<{
   selectedCameraUuid: string | null
@@ -369,7 +371,7 @@ const selectedVideoResolution = ref<VideoResolutionValue | null>(null)
 const selectedVideoParameters = ref<VideoParameterSettings>({})
 const downloadedVideoParameters = ref<VideoParameterSettings>({})
 const openRGBSetpointDelete = ref(false)
-const actuatorsState = ref<ActuatorsState | null>({
+const actuatorsState = ref<ActuatorsState>({
   focus: 0,
   zoom: 0,
   tilt: 0,
@@ -574,12 +576,13 @@ const getActuatorsState = () => {
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
     .then(response => {
-      // the return type is a ActuatorsState
-      // actuatorsState.value = { ...response.data }
-      console.log(response.data)
+      const state = response.data as ActuatorsState
+
+      applyNonNull(actuatorsState.value, state)
+      console.log(state)
     })
     .catch(error => {
-      console.error(`Error sending getImageAdjustment request:`, error.message)
+      console.error(`Error sending getActuatorsState request:`, error.message)
     })
 }
 
@@ -596,9 +599,11 @@ const updateActuatorsState = (param: keyof ActuatorsState, value: number) => {
 
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
-    .then(response => {
-      actuatorsState.value = { ...response.data }
-      console.log(response.data)
+    .then(response => { 
+      const state = response.data as ActuatorsState;
+
+      applyNonNull(actuatorsState.value, state)
+      console.log(state)
     })
     .catch(error => {
       console.error(`Error updating ${param}:`, error.message)
