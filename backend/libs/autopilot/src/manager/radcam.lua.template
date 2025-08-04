@@ -13,11 +13,11 @@ local PARAM_TABLE_KEY = {{ param_table_key }}
 local PARAM_PREFIX = {{ param_prefix }}
 
 -- Add parameter table with N parameters
-assert(param:add_table(PARAM_TABLE_KEY, PARAM_PREFIX, 3), 'could not add param table')
+assert(param:add_table(PARAM_TABLE_KEY, PARAM_PREFIX, 2), 'could not add param table')
 
 -- Define parameters with index (1-63), name, and default value
-assert(param:add_param(PARAM_TABLE_KEY, 2, "ENABLE", 1), 'could not add ENABLE')
-assert(param:add_param(PARAM_TABLE_KEY, 3, "GAIN", {{ margin_gain }}), 'could not add GAIN')
+assert(param:add_param(PARAM_TABLE_KEY, 1, "ENABLE", 1), 'could not add ENABLE')
+assert(param:add_param(PARAM_TABLE_KEY, 2, "GAIN", {{ margin_gain }}), 'could not add GAIN')
 
 -- Initialize parameter objects
 local ENABLE = Parameter()      -- when false, this bypasses the correlation
