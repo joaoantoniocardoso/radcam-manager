@@ -280,7 +280,7 @@ import ExpansibleOptions from './ExpansibleOptions.vue'
 import Loading from './Loading.vue'
 import { VideoChannelValue, type BaseParameterSetting, type VideoParameterSettings, type VideoResolutionValue } from '@/bindings/radcam'
 import axios from 'axios'
-import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState, ServoChannel } from '@/bindings/autopilot'
+import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState } from '@/bindings/autopilot'
 
 const props = defineProps<{
   selectedCameraUuid: string | null
