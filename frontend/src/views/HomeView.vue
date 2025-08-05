@@ -83,8 +83,8 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { onMounted, onUnmounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import type { Camera } from '@/bindings/mcm_client'
 import BasicSettings from '@/components/BasicSettings.vue'
@@ -97,6 +97,7 @@ const cameras = ref<Camera[]>([])
 const selectedCameraUUID = ref<string | null>(null)
 
 const route = useRoute()
+const router = useRouter()
 const desiredCameraUuid = ref<string | null>(null)
 
 const theme = ref<'light' | 'dark'>('dark')
@@ -179,5 +180,19 @@ onMounted(() => {
   onUnmounted(() => {
     clearInterval(intervalId)
   })
+})
+
+watch(selectedCameraUUID, (newUUID) => {
+  if (!newUUID) return
+
+  // Avoid pushing the same query again
+  if (route.query.uuid !== newUUID) {
+    router.replace({
+      query: {
+        ...route.query,
+        uuid: newUUID,
+      },
+    })
+  }
 })
 </script>
