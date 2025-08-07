@@ -71,6 +71,10 @@ pub struct Args {
     /// Sets the MAVLink Component ID.
     #[arg(long, value_name = "COMPONENT_ID", default_value = "56")]
     mavlink_component_id: u8,
+
+    /// Sets the BlueOS IP address.
+    #[arg(long, default_value = "127.0.0.1")]
+    blueos_address: String,
 }
 
 /// Constructs our manager, Should be done inside main
@@ -197,6 +201,17 @@ pub fn mavlink_component_id() -> u8 {
 #[instrument(level = "debug")]
 pub fn default_api_version() -> u8 {
     args().default_api_version
+}
+
+#[instrument(level = "debug")]
+pub async fn blueos_address() -> std::net::SocketAddr {
+    let address = &args().blueos_address;
+    let address = shellexpand::full(&address).unwrap().to_string();
+
+    let (host, port) = address.split_once(':').unwrap_or((&address, "80"));
+    let address = format!("{host}:{port}");
+
+    resolve_address(&address).await.unwrap()
 }
 
 #[instrument(level = "debug")]
