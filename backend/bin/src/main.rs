@@ -25,22 +25,33 @@ async fn main() -> Result<()> {
     debug!("Command line call: {}", cli::command_line_string());
     debug!("Command line input struct call: {}", cli::command_line());
 
-    mcm_client::init(cli::mcm_address().await).await;
-
     settings::init(cli::settings_file(), cli::is_reset())
         .await
         .unwrap();
 
-    autopilot::init(
-        cli::autopilot_scripts_file(),
-        cli::mavlink_connection_string().await,
-        cli::mavlink_system_id(),
-        cli::mavlink_component_id(),
-    )
-    .await
-    .unwrap();
+    let mcm_client_startup_task = tokio::spawn(mcm_client::init(cli::mcm_address().await));
+
+    let autopilot_startup_task = tokio::spawn(async move {
+        loop {
+            if let Err(error) = autopilot::init(
+                cli::autopilot_scripts_file(),
+                cli::mavlink_connection_string().await,
+                cli::mavlink_system_id(),
+                cli::mavlink_component_id(),
+            )
+            .await
+            {
+                error!("Failed initializing autopilot: {error:?}");
+            }
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+    });
 
     web::run(cli::web_server().await, cli::default_api_version()).await;
+
+    autopilot_startup_task.abort();
+    mcm_client_startup_task.abort();
 
     Ok(())
 }
