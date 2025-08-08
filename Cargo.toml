@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "backend/libs/autopilot",
+    "backend/libs/blueos_client",
     "backend/libs/mcm_client",
     "backend/libs/radcam_commands",
     "backend/libs/radcam_manager",
