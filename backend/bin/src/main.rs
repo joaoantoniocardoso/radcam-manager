@@ -42,9 +42,13 @@ async fn main() -> Result<()> {
             .await
             {
                 error!("Failed initializing autopilot: {error:?}");
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                continue;
             }
 
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            info!("Successfully started autopilot client!");
+
+            break;
         }
     });
 
