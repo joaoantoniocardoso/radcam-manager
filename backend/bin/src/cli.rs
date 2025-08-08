@@ -60,7 +60,7 @@ pub struct Args {
     #[arg(
         long,
         value_name = "<TYPE>:<IP/SERIAL>:<PORT/BAUDRATE>",
-        default_value = "tcpout:127.0.0.1:5777"
+        default_value = "udpout:127.0.0.1:11001"
     )]
     mavlink: String,
 
