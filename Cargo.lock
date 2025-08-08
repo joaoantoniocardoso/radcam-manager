@@ -170,6 +170,7 @@ version = "0.2.0-beta.1"
 dependencies = [
  "anyhow",
  "axum",
+ "blueos_client",
  "chrono",
  "futures",
  "indexmap 2.10.0",
@@ -308,6 +309,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "blueos_client"
+version = "0.2.0-beta.1"
+dependencies = [
+ "anyhow",
+ "once_cell",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "web_client",
 ]
 
 [[package]]
@@ -3020,6 +3036,7 @@ version = "0.2.0-beta.1"
 dependencies = [
  "anyhow",
  "autopilot",
+ "blueos_client",
  "chrono",
  "clap 4.5.42",
  "mcm_client",
