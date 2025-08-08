@@ -54,6 +54,29 @@ pub async fn post<
 }
 
 #[instrument(level = "debug", skip_all)]
+pub async fn put<
+    D: DeserializeOwned + std::fmt::Debug,
+    B: Serialize + std::fmt::Debug,
+    Q: Serialize + std::fmt::Debug,
+>(
+    address: &SocketAddr,
+    path: &str,
+    body_data: B,
+    query_params: Q,
+) -> Result<D> {
+    let url = Url::parse_with_params(
+        &format!("http://{address}/{path}"),
+        to_url_params(query_params),
+    )?;
+
+    send_request(
+        reqwest::Client::new().put(url),
+        serde_json::to_string(&body_data)?,
+    )
+    .await
+}
+
+#[instrument(level = "debug", skip_all)]
 pub async fn delete<
     D: DeserializeOwned + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
