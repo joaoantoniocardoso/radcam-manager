@@ -31,6 +31,25 @@ async fn main() -> Result<()> {
 
     let mcm_client_startup_task = tokio::spawn(mcm_client::init(cli::mcm_address().await));
 
+    blueos_client::init(cli::blueos_address().await).await;
+
+    let create_mavlink_endpoint_task = tokio::spawn(async move {
+        loop {
+            if let Err(error) =
+                blueos_client::create_mavlink_endpoint(&cli::mavlink_connection_string().await)
+                    .await
+            {
+                error!("Failed creating MAVLink Endpoint: {error:?}");
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                continue;
+            }
+
+            info!("Successfully created MAVLink endpoint!");
+
+            break;
+        }
+    });
+
     let autopilot_startup_task = tokio::spawn(async move {
         loop {
             if let Err(error) = autopilot::init(
@@ -56,6 +75,7 @@ async fn main() -> Result<()> {
 
     autopilot_startup_task.abort();
     mcm_client_startup_task.abort();
+    create_mavlink_endpoint_task.abort();
 
     Ok(())
 }
