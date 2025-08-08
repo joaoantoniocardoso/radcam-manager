@@ -206,18 +206,22 @@ impl MavlinkComponent {
     }
     #[instrument(level = "debug", skip(self))]
     pub async fn reboot_autopilot(&self) -> Result<()> {
-        let target_system = { self.inner.read().await.system_id };
-        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+        // This is a workaround to this issue: https://github.com/bluerobotics/radcam-manager/issues/57
+        blueos_client::reboot_autopilot().await
 
-        self.send_command(COMMAND_LONG_DATA {
-            target_system,
-            target_component,
-            confirmation: 0,
-            command: MavCmd::MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
-            param1: 1.0, // autopilot
-            ..Default::default()
-        })
-        .await
+        // FIXME: once the aforementioned issue is fixed, we can use the code below:
+        // let target_system = { self.inner.read().await.system_id };
+        // let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+
+        // self.send_command(COMMAND_LONG_DATA {
+        //     target_system,
+        //     target_component,
+        //     confirmation: 0,
+        //     command: MavCmd::MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
+        //     param1: 1.0, // autopilot
+        //     ..Default::default()
+        // })
+        // .await
     }
 
     #[instrument(level = "debug", skip(self))]

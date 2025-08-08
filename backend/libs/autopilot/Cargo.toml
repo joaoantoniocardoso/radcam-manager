@@ -13,6 +13,7 @@ bench = false
 
 [dependencies]
 settings = { path="../settings" }
+blueos_client = { path="../blueos_client" }
 
 anyhow = { workspace = true }
 axum = { version = "0.8.3", features = ["ws"] }
