@@ -38,6 +38,16 @@ impl Settings {
         Ok(settings)
     }
 
+    pub async fn reset(path: &Path) -> Result<()> {
+        let mut manager = MANAGER.get().unwrap().write().await;
+
+        manager.settings.get_actuators_mut().clear();
+
+        tokio::fs::remove_file(path).await?;
+
+        Ok(())
+    }
+
     pub async fn from_path(path: &Path) -> Result<Self> {
         async fn read_inner(path: &Path) -> Result<Settings> {
             let contents = fs::read_to_string(path)
