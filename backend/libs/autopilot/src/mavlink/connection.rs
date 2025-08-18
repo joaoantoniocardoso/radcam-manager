@@ -76,13 +76,7 @@ impl Connection {
         }
     }
 
-    pub async fn recv(&mut self, timeout: Duration) -> Result<(MavHeader, MavMessage)> {
-        tokio::time::timeout(timeout, self.recv_inner())
-            .await
-            .map_err(anyhow::Error::msg)
-    }
-
-    async fn recv_inner(&mut self) -> (MavHeader, MavMessage) {
+    pub async fn recv(&mut self) -> (MavHeader, MavMessage) {
         loop {
             if let Some(mavlink) = &self.inner {
                 match mavlink.recv().await {
