@@ -131,8 +131,8 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useRouteQuery } from '@vueuse/router'
 
 import type { Camera } from '@/bindings/mcm_client'
 import BasicSettings from '@/components/BasicSettings.vue'
@@ -144,10 +144,8 @@ const tab = ref(null)
 // const backendAPI = ref(`http://192.168.2.2:<radcam-extension-port>/v1`) // For local frontend development:
 const backendAPI = ref('v1')
 const cameras = ref<Camera[]>([])
-const selectedCameraUUID = ref<string | null>(null)
+const selectedCameraUUID = useRouteQuery<string | null>('uuid', null)
 
-const route = useRoute()
-const router = useRouter()
 const desiredCameraUuid = ref<string | null>(null)
 
 const theme = ref<'light' | 'dark'>('dark')
@@ -273,7 +271,6 @@ const resetCameraSettings = (): void => {
 }
 
 onMounted(() => {
-  desiredCameraUuid.value = route.query.uuid ? (route.query.uuid as string) : null
   getCameras()
 
   const intervalId = setInterval(() => {
@@ -285,19 +282,7 @@ onMounted(() => {
   })
 })
 
-watch(selectedCameraUUID, (newUUID) => {
-  if (!newUUID) return
 
-  // Avoid pushing the same query again
-  if (route.query.uuid !== newUUID) {
-    router.replace({
-      query: {
-        ...route.query,
-        uuid: newUUID,
-      },
-    })
-  }
-})
 </script>
 <style scoped>
 .transparent-card {
