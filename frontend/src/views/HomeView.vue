@@ -153,7 +153,12 @@ const configMode = ref<'basic' | 'advanced'>('basic')
 const cameraControls = ref<InstanceType<typeof BasicSettings> | null>(null)
 const showSnackbar = ref(false)
 const snackbarMessage = ref('')
-const isCockpitMode = ref(window.self !== window.top)
+const isCockpitMode = useRouteQuery<string, boolean>('cockpit_mode', 'false', {
+  transform: {
+    get: (v: string) => v === 'true',
+    set: (v: boolean) => String(v),
+  },
+})
 
 const configButtons = [
   {
