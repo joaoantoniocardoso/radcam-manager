@@ -193,7 +193,7 @@
           :class="{ 'opacity-50 pointer-events-none': !hasUnsavedVideoChanges }"
           size="small"
           variant="elevated"
-          @click="saveDataAndRestart"
+          @click="saveVideoDataAndRestart"
         >
           SAVE AND RESTART CAMERA
         </v-btn>
@@ -305,7 +305,7 @@
         size="small"
         variant="elevated"
         :disabled="!hasUnsavedChannelChanges"
-        @click="saveDataAndRestart"
+        @click="saveChannelData"
       >
         SAVE AND RESTART CAMERA
       </v-btn>
@@ -981,13 +981,8 @@ const doRestart = () => {
     })
 }
 
-const saveDataAndRestart = async (): Promise<void> => {
+const saveVideoDataAndRestart = async (): Promise<void> => {
   if (!props.selectedCameraUuid) return
-
-  type ChannelKeys = Extract<keyof ActuatorsParametersConfig, keyof typeof tempChannelChanges.value>
-  const changedActuators = (
-    Object.entries(tempChannelChanges.value) as [ChannelKeys, ActuatorsParametersConfig[ChannelKeys]][]
-  ).filter(([k, v]) => focusAndZoomParams.value[k] !== v)
 
   const videoPartial: Partial<VideoParameterSettings> = {}
   const curr = selectedVideoParameters.value
@@ -1004,9 +999,23 @@ const saveDataAndRestart = async (): Promise<void> => {
     }
   })
 
-  if (changedActuators.length === 0 && Object.keys(videoPartial).length === 0) {
-    return
+  if (Object.keys(videoPartial).length > 0) {
+    await updateVideoParameters(videoPartial)
+    doRestart()
+    Object.assign(selectedVideoParameters.value, videoPartial)
   }
+
+  tempVideoChanges.value = { pic_width: null, pic_height: null, bitrate: null }
+  hasUnsavedVideoChanges.value = false
+}
+
+const saveChannelData = async (): Promise<void> => {
+  if (!props.selectedCameraUuid) return
+
+  type ChannelKeys = Extract<keyof ActuatorsParametersConfig, keyof typeof tempChannelChanges.value>
+  const changedActuators = (
+    Object.entries(tempChannelChanges.value) as [ChannelKeys, ActuatorsParametersConfig[ChannelKeys]][]
+  ).filter(([k, v]) => focusAndZoomParams.value[k] !== v)
 
   if (changedActuators.length > 0) {
     await Promise.all(
@@ -1016,11 +1025,6 @@ const saveDataAndRestart = async (): Promise<void> => {
     Object.assign(focusAndZoomParams.value, patch)
   }
 
-  if (Object.keys(videoPartial).length > 0) {
-    await updateVideoParameters(videoPartial)
-    Object.assign(selectedVideoParameters.value, videoPartial)
-  }
-
   tempChannelChanges.value = {
     focus_channel:           focusAndZoomParams.value.focus_channel,
     zoom_channel:            focusAndZoomParams.value.zoom_channel,
@@ -1028,11 +1032,8 @@ const saveDataAndRestart = async (): Promise<void> => {
     tilt_channel_reversed:   focusAndZoomParams.value.tilt_channel_reversed,
     script_channel:          focusAndZoomParams.value.script_channel,
   }
-  tempVideoChanges.value = { pic_width: null, pic_height: null, bitrate: null }
 
   hasUnsavedChannelChanges.value = false
-  hasUnsavedVideoChanges.value = false
-  doRestart()
 }
 
 
