@@ -1034,8 +1034,7 @@ const saveChannelData = async (): Promise<void> => {
 
 
 onMounted(() => {
-  getActuatorsConfig()
-  getActuatorsState()
+  getInitialCameraStates()
 })
 
 const getInitialCameraStates = () => {
