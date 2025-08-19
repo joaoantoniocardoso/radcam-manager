@@ -739,10 +739,6 @@ const getActuatorsConfig = () => {
     })
 }
 
-watch(() => focusAndZoomParams.value.focus_channel, (val) => {
-  console.log('focus_channel changed to', val)
-})
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateActuatorsConfig = (param: keyof ActuatorsParametersConfig, value: any) => {
