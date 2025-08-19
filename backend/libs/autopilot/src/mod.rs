@@ -48,7 +48,7 @@ pub(crate) async fn control_inner(
 
     let res = match &actuators_control.action {
         Action::ExportLuaScript => {
-            let mut manager = MANAGER.get().unwrap().write().await;
+            let mut manager = MANAGER.get().context("Not available")?.write().await;
 
             let reload_script = manager
                 .export_script(&actuators_control.camera_uuid, true)
@@ -66,14 +66,14 @@ pub(crate) async fn control_inner(
             serde_json::to_value({})?
         }
         Action::GetActuatorsState => {
-            let mut manager = MANAGER.get().unwrap().write().await;
+            let mut manager = MANAGER.get().context("Not available")?.write().await;
 
             let state = manager.get_state(&actuators_control.camera_uuid).await?;
 
             serde_json::to_value(state)?
         }
         Action::SetActuatorsState(new_state) => {
-            let mut manager = MANAGER.get().unwrap().write().await;
+            let mut manager = MANAGER.get().context("Not available")?.write().await;
 
             let state = manager
                 .update_state(&actuators_control.camera_uuid, new_state)
@@ -82,7 +82,7 @@ pub(crate) async fn control_inner(
             serde_json::to_value(state)?
         }
         Action::GetActuatorsConfig => {
-            let manager = MANAGER.get().unwrap().read().await;
+            let manager = MANAGER.get().context("Not available")?.read().await;
 
             let config: &api::ActuatorsConfig = &manager
                 .settings
@@ -94,7 +94,7 @@ pub(crate) async fn control_inner(
             serde_json::to_value(config)?
         }
         Action::SetActuatorsConfig(new_config) => {
-            let mut manager = MANAGER.get().unwrap().write().await;
+            let mut manager = MANAGER.get().context("Not available")?.write().await;
 
             manager
                 .update_config(&actuators_control.camera_uuid, new_config, false)
@@ -110,7 +110,7 @@ pub(crate) async fn control_inner(
             serde_json::to_value(config)?
         }
         Action::ResetActuatorsConfig => {
-            let mut manager = MANAGER.get().unwrap().write().await;
+            let mut manager = MANAGER.get().context("Not available")?.write().await;
 
             manager.reset_config(&actuators_control.camera_uuid).await?;
 

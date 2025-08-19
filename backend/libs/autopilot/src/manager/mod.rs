@@ -32,8 +32,14 @@ pub struct State {
 }
 
 impl State {
-    pub async fn from_settings() -> Self {
-        let settings = &SETTINGS_MANAGER.get().unwrap().read().await.settings;
+    #[instrument(level = "debug")]
+    pub async fn from_settings() -> Result<Self> {
+        let settings = &SETTINGS_MANAGER
+            .get()
+            .context("Not available")?
+            .read()
+            .await
+            .settings;
 
         let actuators = settings
             .get_actuators()
@@ -41,11 +47,17 @@ impl State {
             .map(|(uuid, actuator_settings)| (*uuid, CameraActuators::from(actuator_settings)))
             .collect();
 
-        Self { actuators }
+        Ok(Self { actuators })
     }
 
+    #[instrument(level = "debug", skip(self))]
     pub async fn save(&self) -> Result<()> {
-        let settings = &mut SETTINGS_MANAGER.get().unwrap().write().await.settings;
+        let settings = &mut SETTINGS_MANAGER
+            .get()
+            .context("Not available")?
+            .write()
+            .await
+            .settings;
 
         let actuators = self
             .actuators
@@ -245,7 +257,7 @@ pub async fn init(
     let mavlink =
         MavlinkComponent::new(mavlink_address, mavlink_system_id, mavlink_component_id).await;
 
-    let settings = State::from_settings().await;
+    let settings = State::from_settings().await?;
 
     MANAGER.get_or_init(|| {
         RwLock::new(Manager {
