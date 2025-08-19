@@ -24,7 +24,7 @@ pub enum ParamEncodingType {
 
 impl MavlinkComponent {
     #[instrument(level = "debug", skip(inner))]
-    pub async fn configure_parameter_encoding(inner: Arc<RwLock<ComponentInner>>) {
+    pub(crate) async fn configure_parameter_encoding(inner: Arc<RwLock<ComponentInner>>) {
         let target_system;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
         let this_system;
@@ -129,7 +129,7 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    pub async fn update_all_params(inner: Arc<RwLock<ComponentInner>>) {
+    pub(crate) async fn update_all_params(inner: Arc<RwLock<ComponentInner>>) {
         let target_system;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
         let this_system;
@@ -241,7 +241,7 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    pub async fn params_sync_task(inner: Arc<RwLock<ComponentInner>>) {
+    pub(crate) async fn params_sync_task(inner: Arc<RwLock<ComponentInner>>) {
         let mut receiver;
         let encoding;
 
