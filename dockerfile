@@ -44,6 +44,6 @@ ENTRYPOINT [ \
     "--mavlink-component-id", "56", \
     "--log-path", "/logs", \
     "--settings-file", "/app/settings.json", \
-    "--autopilot-scripts-file", "/scripts/radcam.lua" \
+    "--autopilot-scripts-file", "/scripts/radcam.lua", \
     "--blueos-address", "blueos.internal" \
 ]
