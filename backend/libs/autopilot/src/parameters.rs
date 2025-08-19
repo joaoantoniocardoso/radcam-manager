@@ -356,61 +356,70 @@ pub enum CameraType {
 
 pub const CLOSEST_POINTS: &[api::FocusZoomPoint] = &[
     api::FocusZoomPoint {
-        zoom: 900,
-        focus: 882,
+        zoom: 870,
+        focus: 949,
     },
     api::FocusZoomPoint {
-        zoom: 1100,
-        focus: 1253,
+        zoom: 928,
+        focus: 956,
     },
     api::FocusZoomPoint {
-        zoom: 1300,
-        focus: 1498,
+        zoom: 1191,
+        focus: 1102,
     },
     api::FocusZoomPoint {
-        zoom: 1500,
-        focus: 1669,
+        zoom: 1413,
+        focus: 1277,
     },
     api::FocusZoomPoint {
-        zoom: 1700,
-        focus: 1759,
+        zoom: 1617,
+        focus: 1518,
     },
     api::FocusZoomPoint {
-        zoom: 1900,
-        focus: 1862,
+        zoom: 1771,
+        focus: 1836,
     },
     api::FocusZoomPoint {
-        zoom: 2100,
-        focus: 1883,
+        zoom: 1831,
+        focus: 2057,
+    },
+    api::FocusZoomPoint {
+        zoom: 1951,
+        focus: 2556,
     },
 ];
+
 pub const FURTHEST_POINTS: &[api::FocusZoomPoint] = &[
     api::FocusZoomPoint {
-        zoom: 900,
-        focus: 935,
+        zoom: 870,
+        focus: 862,
     },
     api::FocusZoomPoint {
-        zoom: 1100,
-        focus: 1305,
+        zoom: 928,
+        focus: 872,
     },
     api::FocusZoomPoint {
-        zoom: 1300,
-        focus: 1520,
+        zoom: 1191,
+        focus: 1012,
     },
     api::FocusZoomPoint {
-        zoom: 1500,
-        focus: 1696,
+        zoom: 1413,
+        focus: 1168,
     },
     api::FocusZoomPoint {
-        zoom: 1700,
-        focus: 1811,
+        zoom: 1617,
+        focus: 1359,
     },
     api::FocusZoomPoint {
-        zoom: 1900,
-        focus: 1911,
+        zoom: 1771,
+        focus: 1564,
     },
     api::FocusZoomPoint {
-        zoom: 2100,
-        focus: 1930,
+        zoom: 1831,
+        focus: 1698,
+    },
+    api::FocusZoomPoint {
+        zoom: 1951,
+        focus: 2155,
     },
 ];
