@@ -82,7 +82,7 @@ fn widgets(cameras: &Cameras) -> Vec<CockpitWidget> {
         .map(|(camera_uuid, camera)| CockpitWidget {
             name: format!("RadCam ({})", camera.hostname),
             config_iframe_url: None,
-            iframe_url: format!("/?uuid={camera_uuid}&cockpit_mode=true"),
+            iframe_url: format!("#/?uuid={camera_uuid}&cockpit_mode=true"),
             iframe_icon: "/assets/logo.svg".to_string(),
             version: version.clone(),
         })
