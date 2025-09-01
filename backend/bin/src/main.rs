@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     blueos_client::init(cli::blueos_address().await).await;
 
-    let create_mavlink_endpoint_task = tokio::spawn(async move {
+    let autopilot_startup_task = tokio::spawn(async move {
         loop {
             if let Err(error) =
                 blueos_client::create_mavlink_endpoint(&cli::mavlink_connection_string().await)
@@ -48,9 +48,7 @@ async fn main() -> Result<()> {
 
             break;
         }
-    });
 
-    let autopilot_startup_task = tokio::spawn(async move {
         loop {
             if let Err(error) = autopilot::init(
                 cli::autopilot_scripts_file(),
@@ -75,7 +73,6 @@ async fn main() -> Result<()> {
 
     autopilot_startup_task.abort();
     mcm_client_startup_task.abort();
-    create_mavlink_endpoint_task.abort();
 
     Ok(())
 }
