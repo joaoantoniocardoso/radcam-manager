@@ -102,7 +102,7 @@ impl MavlinkComponent {
     #[instrument(level = "debug", skip(inner))]
     async fn receiver_task(inner: Arc<RwLock<ComponentInner>>) {
         let sender;
-        let timeout = std::time::Duration::from_millis(500);
+        let timeout = std::time::Duration::from_secs(10);
 
         {
             let inner_guard = inner.read().await;
@@ -111,13 +111,7 @@ impl MavlinkComponent {
 
         loop {
             // Receive from the Mavlink network
-            let (header, message) = match inner.write().await.connection.recv(timeout).await {
-                Ok(inner) => inner,
-                Err(error) => {
-                    warn!("Failed receiving mavlink message: {error:?}");
-                    continue;
-                }
-            };
+            let (header, message) = inner.write().await.connection.recv(timeout).await;
 
             // Send the received message to the components
             if let Err(error) = sender.send(Message::Received((header, message))) {

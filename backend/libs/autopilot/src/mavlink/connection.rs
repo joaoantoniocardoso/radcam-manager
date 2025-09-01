@@ -76,23 +76,22 @@ impl Connection {
         }
     }
 
-    pub async fn recv(&mut self, timeout: Duration) -> Result<(MavHeader, MavMessage)> {
-        tokio::time::timeout(timeout, self.recv_inner())
-            .await
-            .map_err(anyhow::Error::msg)
-    }
-
-    async fn recv_inner(&mut self) -> (MavHeader, MavMessage) {
+    pub async fn recv(&mut self, timeout: Duration) -> (MavHeader, MavMessage) {
         loop {
             if let Some(mavlink) = &self.inner {
-                match mavlink.recv().await {
-                    Ok(inner) => return inner,
-                    Err(mavlink::error::MessageReadError::Io(error)) => {
-                        error!("Failed receiving message: {error:?}");
-                    }
-                    Err(mavlink::error::MessageReadError::Parse(error)) => {
-                        warn!("Failed receiving message: {error:?}");
-                        continue;
+                match tokio::time::timeout(timeout, mavlink.recv()).await {
+                    Ok(result) => match result {
+                        Ok(inner) => return inner,
+                        Err(mavlink::error::MessageReadError::Io(error)) => {
+                            error!("Failed receiving message: {error:?}");
+                        }
+                        Err(mavlink::error::MessageReadError::Parse(error)) => {
+                            warn!("Failed receiving message: {error:?}");
+                            continue;
+                        }
+                    },
+                    Err(_) => {
+                        error!("Timeout while receiving message. Reconnecting...");
                     }
                 }
             }
