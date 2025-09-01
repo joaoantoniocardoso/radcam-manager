@@ -255,7 +255,7 @@ pub async fn init(
     mavlink_component_id: u8,
 ) -> Result<()> {
     let mavlink =
-        MavlinkComponent::new(mavlink_address, mavlink_system_id, mavlink_component_id).await;
+        MavlinkComponent::try_new(mavlink_address, mavlink_system_id, mavlink_component_id).await?;
 
     let settings = State::from_settings().await?;
 

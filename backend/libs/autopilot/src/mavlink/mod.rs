@@ -3,7 +3,7 @@ pub mod parameters;
 
 use std::sync::Arc;
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use indexmap::IndexMap;
 use mavlink::{
     self, MavHeader, Message as _, MessageData,
@@ -32,9 +32,9 @@ pub struct MavlinkComponent {
 
 impl MavlinkComponent {
     #[instrument(level = "debug")]
-    pub async fn new(address: String, system_id: u8, component_id: u8) -> Self {
+    pub async fn try_new(address: String, system_id: u8, component_id: u8) -> Result<Self> {
         let inner = Arc::new(RwLock::new(
-            ComponentInner::new(address, system_id, component_id).await,
+            ComponentInner::try_new(address, system_id, component_id).await?,
         ));
 
         let sender_task_handle = tokio::spawn(Self::sender_task(inner.clone()));
@@ -46,13 +46,13 @@ impl MavlinkComponent {
 
         let params_sync_task_handle = tokio::spawn(Self::params_sync_task(inner.clone()));
 
-        Self {
+        Ok(Self {
             inner,
             sender_task_handle,
             receiver_task_handle,
             params_sync_task_handle,
             heartbeat_task_handle,
-        }
+        })
     }
 
     #[instrument(level = "debug", skip(inner))]
@@ -398,14 +398,57 @@ impl std::fmt::Debug for ComponentInner {
 
 impl ComponentInner {
     #[instrument(level = "debug")]
-    pub async fn new(address: String, system_id: u8, component_id: u8) -> Self {
-        Self {
+    pub async fn try_new(address: String, system_id: u8, component_id: u8) -> Result<Self> {
+        use mavlink::ardupilotmega::*;
+
+        let mut connection = Connection::new(address.clone()).await;
+
+        // Send initial heartbeat to establish proper connection tracking state
+        //
+        // WHY THIS IS CRITICAL:
+        // When running in Docker, Linux conntrack drops "unsolicited" UDP replies
+        // because they don't match any existing connection state. By sending this
+        // first packet, we create a conntrack entry that allows the kernel to
+        // recognize BlueOS's responses as valid replies rather than invalid traffic.
+        //
+        // Without this:
+        // 1. BlueOS sends MAVLink data to our ephemeral port
+        // 2. Kernel sees it as "invalid" (no matching conntrack entry)
+        // 3. Packets are silently dropped before reaching our socket
+        //
+        // This is NOT a MAVLink protocol requirement - it's a Linux networking
+        // behavior specific to Docker containers. Bare-metal UDP clients don't
+        // need this, but Dockerized ones do due to NAT and connection tracking.
+        {
+            let header = MavHeader {
+                system_id,
+                component_id,
+                sequence: 0,
+            };
+            let heartbeat = MavMessage::HEARTBEAT(HEARTBEAT_DATA {
+                custom_mode: 0,
+                mavtype: MavType::MAV_TYPE_CAMERA,
+                autopilot: MavAutopilot::MAV_AUTOPILOT_INVALID,
+                base_mode: MavModeFlag::empty(),
+                system_status: MavState::MAV_STATE_STANDBY,
+                mavlink_version: 3,
+            });
+
+            connection
+                .send(&header, &heartbeat, std::time::Duration::from_secs(2))
+                .await
+                .context("Failed to send initial heartbeat")?;
+
+            info!("Initial heartbeat sent.");
+        }
+
+        Ok(Self {
             system_id,
             component_id,
             encoding: ParamEncodingType::default(),
             parameters: IndexMap::with_capacity(2048),
-            connection: Connection::new(address).await,
-        }
+            connection,
+        })
     }
 
     #[instrument(level = "debug", skip(self))]
