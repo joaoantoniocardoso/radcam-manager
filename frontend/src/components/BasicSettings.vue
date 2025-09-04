@@ -249,17 +249,22 @@
       :expanded="cockpitMode ? false : true"
       theme="dark"
     >
+      <div class="mb-4 p-3">
+        Please select below each correspondent channel pin from the Navigator Board each cable is connected to. 
+        The recommended is focus 10, zoom 11, script 12, tilt 16.
+      </div>
+
       <BlueSelect
         v-model="tempChannelChanges.focus_channel"
         label="Focus PWM output"
-        :items="servoChannelOptions"
+        :items="availableServoChannelOptions"
         theme="dark"
         @update:model-value="handleChannelChanges('focus_channel', $event)"
       />
       <BlueSelect
         v-model="tempChannelChanges.zoom_channel"
         label="Zoom PWM output"
-        :items="servoChannelOptions"
+        :items="availableServoChannelOptions"
         theme="dark"
         class="mt-6"
         @update:model-value="handleChannelChanges('zoom_channel', $event)"
@@ -267,7 +272,7 @@
       <BlueSelect
         v-model="tempChannelChanges.script_channel"
         label="Script PWM input"
-        :items="servoChannelOptions"
+        :items="availableServoChannelOptions"
         theme="dark"
         class="mt-6"
         @update:model-value="handleChannelChanges('script_channel', $event)"
@@ -275,7 +280,7 @@
       <BlueSelect
         v-model="tempChannelChanges.tilt_channel"
         label="Tilt PWM output"
-        :items="servoChannelOptions"
+        :items="availableServoChannelOptions"
         theme="dark"
         class="mt-6"
         @update:model-value="handleChannelChanges('tilt_channel', $event)"
@@ -295,21 +300,19 @@
           @update:model-value="handleChannelChanges('tilt_channel_reversed', $event)"
         />
       </ExpansibleOptions>
+      <div class="flex justify-end mt-6">
+        <v-btn
+          class="py-1 px-3 rounded-md bg-[#0B5087] text-white hover:bg-[#0A3E6B]"
+          size="small"
+          variant="elevated"
+          :disabled="!isHardwareSetupComplete || hasDuplicateChannels || isLoading"
+          :loading="isLoading"
+          @click="saveHardwareSetup"
+        >
+          SAVE HARDWARE SETUP
+        </v-btn>
+      </div>
     </ExpansiblePanel>
-    <div
-      v-if="hasUnsavedChannelChanges"
-      class="flex justify-end mr-8"
-    >
-      <v-btn
-        class="py-1 px-3 rounded-md bg-[#0B5087] text-white hover:bg-[#0A3E6B]"
-        size="small"
-        variant="elevated"
-        :disabled="!hasUnsavedChannelChanges"
-        @click="saveChannelData"
-      >
-        SAVE AND RESTART CAMERA
-      </v-btn>
-    </div>
   </div>
   <v-dialog
     v-model="openRGBSetpointForm"
@@ -818,9 +821,58 @@ const updateActuatorsState = (param: keyof ActuatorsState, value: number) => {
     })
 }
 
+const isHardwareSetupComplete = computed<boolean>(() => {
+  return (
+    tempChannelChanges.value.focus_channel !== null &&
+    tempChannelChanges.value.zoom_channel !== null &&
+    tempChannelChanges.value.tilt_channel !== null &&
+    tempChannelChanges.value.script_channel !== null
+  )
+})
+
+const hasDuplicateChannels = computed<boolean>(() => {
+  const channels = [
+    tempChannelChanges.value.focus_channel,
+    tempChannelChanges.value.zoom_channel,
+    tempChannelChanges.value.tilt_channel,
+    tempChannelChanges.value.script_channel
+  ].filter(channel => channel !== null)
+  
+  return new Set(channels).size !== channels.length
+})
+
+const availableServoChannelOptions = computed(() => {
+  const selectedChannels = new Set([
+    tempChannelChanges.value.focus_channel,
+    tempChannelChanges.value.zoom_channel,
+    tempChannelChanges.value.tilt_channel,
+    tempChannelChanges.value.script_channel
+  ].filter(channel => channel !== null))
+
+  return servoChannelOptions.map(option => ({
+    ...option,
+    disabled: selectedChannels.has(option.value) && 
+              option.value !== tempChannelChanges.value.focus_channel &&
+              option.value !== tempChannelChanges.value.zoom_channel &&
+              option.value !== tempChannelChanges.value.tilt_channel &&
+              option.value !== tempChannelChanges.value.script_channel
+  }))
+})
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handleChannelChanges = ( param: keyof typeof tempChannelChanges.value, value: any): void => {
   if (!props.selectedCameraUuid) return
+
+  // Check if this value is already selected by another channel
+  const isAlreadySelected = Object.entries(tempChannelChanges.value).some(
+    ([key, channelValue]) => key !== param && channelValue === value
+  )
+
+  if (isAlreadySelected && value !== null) {
+    console.warn(`Channel ${value} is already selected for another function`)
+    // Don't update if duplicate
+    return
+  }
 
   tempChannelChanges.value[param] = value                                 
   hasUnsavedChannelChanges.value = (
@@ -1005,33 +1057,54 @@ const saveVideoDataAndRestart = async (): Promise<void> => {
   hasUnsavedVideoChanges.value = false
 }
 
-const saveChannelData = async (): Promise<void> => {
+const saveHardwareSetup = async (): Promise<void> => {
   if (!props.selectedCameraUuid) return
 
-  type ChannelKeys = Extract<keyof ActuatorsParametersConfig, keyof typeof tempChannelChanges.value>
-  const changedActuators = (
-    Object.entries(tempChannelChanges.value) as [ChannelKeys, ActuatorsParametersConfig[ChannelKeys]][]
-  ).filter(([k, v]) => focusAndZoomParams.value[k] !== v)
+  if (!isHardwareSetupComplete.value) {
+    console.error('All channel selections are required')
+    return
+  }
 
-  if (changedActuators.length > 0) {
-    await Promise.all(
-      changedActuators.map(([param, value]) => updateActuatorsConfig(param, value))
+  isLoading.value = true
+  
+  const payload: ActuatorsControl = {
+    camera_uuid: props.selectedCameraUuid,
+    action: "setActuatorsConfig",
+    json: { 
+      parameters: {
+        focus_channel: tempChannelChanges.value.focus_channel,
+        zoom_channel: tempChannelChanges.value.zoom_channel,
+        tilt_channel: tempChannelChanges.value.tilt_channel,
+        script_channel: tempChannelChanges.value.script_channel,
+        tilt_channel_reversed: tempChannelChanges.value.tilt_channel_reversed,
+      } as ActuatorsParametersConfig
+    } as ActuatorsConfig
+  }
+
+  console.log('Saving hardware setup:', payload)
+
+  axios
+    .post(`${props.backendApi}/autopilot/control`, payload)
+    .then((response) => {
+      console.log("Got an answer from the setActuatorsConfig request", response.data)
+
+      const newParams = (response.data as ActuatorsConfig)?.parameters
+      if (newParams) {
+        focusAndZoomParams.value = { ...newParams }
+
+        hasUnsavedChannelChanges.value = false
+      }
+    })
+    .catch((error) =>
+      console.error(
+        `Error saving hardware setup':`,
+        error.message
+      )
     )
-    const patch = Object.fromEntries(changedActuators as unknown as [string, unknown][]) as Partial<ActuatorsParametersConfig>
-    Object.assign(focusAndZoomParams.value, patch)
-  }
-
-  tempChannelChanges.value = {
-    focus_channel:           focusAndZoomParams.value.focus_channel,
-    zoom_channel:            focusAndZoomParams.value.zoom_channel,
-    tilt_channel:            focusAndZoomParams.value.tilt_channel,
-    tilt_channel_reversed:   focusAndZoomParams.value.tilt_channel_reversed,
-    script_channel:          focusAndZoomParams.value.script_channel,
-  }
-
-  hasUnsavedChannelChanges.value = false
+    .finally(() => {
+      isLoading.value = false
+    })
 }
-
 
 onMounted(() => {
   getInitialCameraStates()
