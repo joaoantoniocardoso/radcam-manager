@@ -23,7 +23,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct MavlinkComponent {
-    pub(crate) inner: Arc<RwLock<ComponentInner>>,
+    pub(crate) inner: Arc<ComponentInner>,
     sender_task_handle: tokio::task::JoinHandle<()>,
     receiver_task_handle: tokio::task::JoinHandle<()>,
     params_sync_task_handle: tokio::task::JoinHandle<()>,
@@ -33,9 +33,7 @@ pub struct MavlinkComponent {
 impl MavlinkComponent {
     #[instrument(level = "debug")]
     pub async fn try_new(address: String, system_id: u8, component_id: u8) -> Result<Self> {
-        let inner = Arc::new(RwLock::new(
-            ComponentInner::try_new(address, system_id, component_id).await?,
-        ));
+        let inner = Arc::new(ComponentInner::try_new(address, system_id, component_id).await?);
 
         let sender_task_handle = tokio::spawn(Self::sender_task(inner.clone()));
         let receiver_task_handle = tokio::spawn(Self::receiver_task(inner.clone()));
@@ -56,13 +54,15 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    async fn sender_task(inner: Arc<RwLock<ComponentInner>>) {
+    async fn sender_task(inner: Arc<ComponentInner>) {
         let mut receiver;
         let timeout = std::time::Duration::from_secs(10);
 
+        let mut connection;
+
         {
-            let inner_guard = inner.read().await;
-            receiver = inner_guard.get_receiver().await;
+            receiver = inner.get_receiver().await;
+            connection = inner.connection.clone()
         }
 
         loop {
@@ -85,13 +85,7 @@ impl MavlinkComponent {
             };
 
             // Send the response from the local components to the Mavlink network
-            if let Err(error) = inner
-                .write()
-                .await
-                .connection
-                .send(&header, &message, timeout)
-                .await
-            {
+            if let Err(error) = connection.send(&header, &message, timeout).await {
                 error!("Failed sending message to Mavlink Connection: {error:?}");
 
                 continue;
@@ -100,18 +94,13 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    async fn receiver_task(inner: Arc<RwLock<ComponentInner>>) {
-        let sender;
+    async fn receiver_task(inner: Arc<ComponentInner>) {
+        let sender = inner.get_sender().await;
         let timeout = std::time::Duration::from_secs(10);
-
-        {
-            let inner_guard = inner.read().await;
-            sender = inner_guard.get_sender().await;
-        }
 
         loop {
             // Receive from the Mavlink network
-            let (header, message) = inner.write().await.connection.recv(timeout).await;
+            let (header, message) = inner.connection.clone().recv(timeout).await;
 
             // Send the received message to the components
             if let Err(error) = sender.send(Message::Received((header, message))) {
@@ -123,18 +112,10 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    async fn heartbeat_task(inner: Arc<RwLock<ComponentInner>>) {
-        let sender;
-        let system_id;
-        let component_id;
-
-        {
-            let inner_guard = inner.read().await;
-
-            sender = inner_guard.get_sender().await;
-            system_id = inner_guard.system_id;
-            component_id = inner_guard.component_id;
-        }
+    async fn heartbeat_task(inner: Arc<ComponentInner>) {
+        let sender = inner.get_sender().await;
+        let system_id = inner.system_id;
+        let component_id = inner.component_id;
 
         let mut header = MavHeader {
             system_id,
@@ -184,7 +165,7 @@ impl MavlinkComponent {
 
     #[instrument(level = "debug", skip(self))]
     pub async fn reload_lua_scripts(&self, overwrite: bool) -> Result<()> {
-        let target_system = { self.inner.read().await.system_id };
+        let target_system = self.inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
 
         const SCRIPTING_CMD_STOP_AND_RESTART: u8 = 3;
@@ -220,22 +201,12 @@ impl MavlinkComponent {
 
     #[instrument(level = "debug", skip(self))]
     pub async fn send_command(&self, mut command: COMMAND_LONG_DATA) -> Result<()> {
-        let target_system;
+        let target_system = self.inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
-        let this_system;
-        let this_component;
-        let sender;
-        let mut receiver;
-
-        {
-            let inner_guard = self.inner.read().await;
-
-            target_system = inner_guard.system_id;
-            this_system = inner_guard.system_id;
-            this_component = inner_guard.component_id;
-            sender = inner_guard.get_sender().await;
-            receiver = inner_guard.get_receiver().await;
-        }
+        let this_system = self.inner.system_id;
+        let this_component = self.inner.component_id;
+        let sender = self.inner.get_sender().await;
+        let mut receiver = self.inner.get_receiver().await;
 
         let header = MavHeader {
             system_id: this_system,
@@ -301,7 +272,7 @@ impl MavlinkComponent {
         &self,
         camera_id: CameraID,
     ) -> Result<CAMERA_SETTINGS_DATA> {
-        let target_system = { self.inner.read().await.system_id };
+        let target_system = self.inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
 
         let wait_camera_settings_handle = tokio::spawn({
@@ -324,19 +295,10 @@ impl MavlinkComponent {
         wait_camera_settings_handle.await?
     }
 
-    pub async fn wait_camera_settings(
-        inner: Arc<RwLock<ComponentInner>>,
-    ) -> Result<CAMERA_SETTINGS_DATA> {
-        let target_system;
+    pub async fn wait_camera_settings(inner: Arc<ComponentInner>) -> Result<CAMERA_SETTINGS_DATA> {
+        let target_system = inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
-        let mut receiver;
-
-        {
-            let inner_guard = inner.read().await;
-
-            target_system = inner_guard.system_id;
-            receiver = inner_guard.get_receiver().await;
-        }
+        let mut receiver = inner.get_receiver().await;
 
         let wait_message = async {
             loop {
@@ -383,8 +345,8 @@ impl Drop for MavlinkComponent {
 pub(crate) struct ComponentInner {
     pub system_id: u8,
     pub component_id: u8,
-    pub encoding: ParamEncodingType,
-    pub parameters: IndexMap<String, Parameter>,
+    pub encoding: Arc<RwLock<ParamEncodingType>>,
+    pub parameters: Arc<RwLock<IndexMap<String, Parameter>>>,
     connection: Connection,
 }
 
@@ -446,8 +408,8 @@ impl ComponentInner {
         Ok(Self {
             system_id,
             component_id,
-            encoding: ParamEncodingType::default(),
-            parameters: IndexMap::with_capacity(2048),
+            encoding: Arc::new(RwLock::new(ParamEncodingType::default())),
+            parameters: Arc::new(RwLock::new(IndexMap::with_capacity(2048))),
             connection,
         })
     }
