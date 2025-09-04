@@ -78,7 +78,7 @@ impl Manager {
             .settings
             .actuators
             .get_mut(camera_uuid)
-            .context("Camera not configured")?;
+            .context("Camera's actuators not configured")?;
 
         let camera_settings = self
             .mavlink
@@ -111,7 +111,7 @@ impl Manager {
             .settings
             .actuators
             .get_mut(camera_uuid)
-            .context("Camera not configured")?;
+            .context("Camera's actuators not configured")?;
 
         // TODO: we should just wait before sending commands
         // let wait_camera_settings_handle = tokio::spawn({
