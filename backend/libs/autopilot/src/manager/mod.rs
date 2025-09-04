@@ -214,16 +214,24 @@ impl Manager {
                 .await?;
         }
 
-        autopilot_reboot_required |= self.mavlink.enable_lua_script(overwrite).await?;
-
         reload_script |= self.export_script(camera_uuid, overwrite).await?;
 
-        if reload_script {
+        autopilot_reboot_required |= self.mavlink.enable_lua_script(overwrite).await?;
+
+        if reload_script && !autopilot_reboot_required {
             self.mavlink.reload_lua_scripts(overwrite).await?;
         }
 
         if autopilot_reboot_required {
             self.mavlink.reboot_autopilot().await?;
+        }
+
+        if let Some(parameters) = &new_config.parameters {
+            self.update_script_enable(camera_uuid, parameters, true)
+                .await?;
+
+            self.update_script_gain(camera_uuid, parameters, true)
+                .await?;
         }
 
         self.settings.save().await?;

@@ -144,16 +144,10 @@ impl Manager {
         self.update_script_channel_parameters(camera_uuid, parameters, autopilot_reboot_required)
             .await?;
 
-        self.update_script_enable(camera_uuid, parameters, true)
-            .await?;
-
-        self.update_script_gain(camera_uuid, parameters, true)
-            .await?;
-
         Ok(autopilot_reboot_required)
     }
 
-    async fn update_script_enable(
+    pub async fn update_script_enable(
         &mut self,
         camera_uuid: &Uuid,
         parameters: &api::ActuatorsParametersConfig,
@@ -208,7 +202,7 @@ impl Manager {
         Ok(())
     }
 
-    async fn update_script_gain(
+    pub async fn update_script_gain(
         &mut self,
         camera_uuid: &Uuid,
         parameters: &api::ActuatorsParametersConfig,
