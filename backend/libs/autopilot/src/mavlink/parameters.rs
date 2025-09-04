@@ -6,7 +6,7 @@ use mavlink::{
     MavHeader,
     ardupilotmega::{MavMessage, MavProtocolCapability},
 };
-use tokio::sync::{RwLock, broadcast};
+use tokio::sync::broadcast;
 use tracing::*;
 
 use crate::{
@@ -24,7 +24,7 @@ pub enum ParamEncodingType {
 
 impl MavlinkComponent {
     #[instrument(level = "debug", skip(inner))]
-    pub(crate) async fn configure_parameter_encoding(inner: Arc<RwLock<ComponentInner>>) {
+    pub(crate) async fn configure_parameter_encoding(inner: Arc<ComponentInner>) {
         let target_system;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
         let this_system;
@@ -33,13 +33,11 @@ impl MavlinkComponent {
         let mut receiver;
 
         {
-            let inner_guard = inner.read().await;
-
-            target_system = inner_guard.system_id;
-            this_system = inner_guard.system_id;
-            this_component = inner_guard.component_id;
-            sender = inner_guard.get_sender().await;
-            receiver = inner_guard.get_receiver().await;
+            target_system = inner.system_id;
+            this_system = inner.system_id;
+            this_component = inner.component_id;
+            sender = inner.get_sender().await;
+            receiver = inner.get_receiver().await;
         }
 
         let header = MavHeader {
@@ -125,29 +123,18 @@ impl MavlinkComponent {
         };
 
         debug!("Using parameter encoding {encoding:?}");
-        inner.write().await.encoding = encoding;
+        *inner.encoding.write().await = encoding;
     }
 
     #[instrument(level = "debug", skip(inner))]
-    pub(crate) async fn update_all_params(inner: Arc<RwLock<ComponentInner>>) {
-        let target_system;
+    pub(crate) async fn update_all_params(inner: Arc<ComponentInner>) {
+        let target_system = inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
-        let this_system;
-        let this_component;
-        let sender;
-        let mut receiver;
-        let encoding;
-
-        {
-            let inner_guard = inner.read().await;
-
-            target_system = inner_guard.system_id;
-            this_system = inner_guard.system_id;
-            this_component = inner_guard.component_id;
-            sender = inner_guard.get_sender().await;
-            receiver = inner_guard.get_receiver().await;
-            encoding = inner_guard.encoding;
-        }
+        let this_system = inner.system_id;
+        let this_component = inner.component_id;
+        let sender = inner.get_sender().await;
+        let mut receiver = inner.get_receiver().await;
+        let encoding = inner.encoding.read().await.clone();
 
         let header = MavHeader {
             system_id: this_system,
@@ -237,20 +224,13 @@ impl MavlinkComponent {
             }
         }
 
-        inner.write().await.parameters = parameters;
+        *inner.parameters.write().await = parameters;
     }
 
     #[instrument(level = "debug", skip(inner))]
-    pub(crate) async fn params_sync_task(inner: Arc<RwLock<ComponentInner>>) {
-        let mut receiver;
-        let encoding;
-
-        {
-            let inner_guard = inner.read().await;
-
-            receiver = inner_guard.get_receiver().await;
-            encoding = inner_guard.encoding;
-        }
+    pub(crate) async fn params_sync_task(inner: Arc<ComponentInner>) {
+        let mut receiver = inner.get_receiver().await;
+        let encoding = inner.encoding.read().await.clone();
 
         loop {
             let (_header, message) = match receiver.recv().await {
@@ -276,9 +256,9 @@ impl MavlinkComponent {
             };
 
             inner
+                .parameters
                 .write()
                 .await
-                .parameters
                 .entry(parameter.name.clone())
                 .and_modify(|v| {
                     if v.value != parameter.value && v.name != "STAT_RUNTIME" {
@@ -303,35 +283,24 @@ impl MavlinkComponent {
 
     #[instrument(level = "debug", skip(inner))]
     async fn get_param_inner(
-        inner: Arc<RwLock<ComponentInner>>,
+        inner: Arc<ComponentInner>,
         param_name: &str,
         skip_cache: bool,
     ) -> Result<Parameter> {
-        let target_system;
-        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
-        let this_system;
-        let this_component;
-        let sender;
-        let mut receiver;
-        let encoding;
-
-        {
-            let inner_guard = inner.read().await;
-
-            if !skip_cache {
-                if let Some(parameter) = inner_guard.parameters.get(param_name) {
-                    trace!("Got parameter from cache!");
-                    return Ok(parameter.clone());
-                }
+        if !skip_cache {
+            if let Some(parameter) = inner.parameters.read().await.get(param_name) {
+                trace!("Got parameter from cache!");
+                return Ok(parameter.clone());
             }
-
-            target_system = inner_guard.system_id;
-            this_system = inner_guard.system_id;
-            this_component = inner_guard.component_id;
-            sender = inner_guard.get_sender().await;
-            receiver = inner_guard.get_receiver().await;
-            encoding = inner_guard.encoding;
         }
+
+        let target_system = inner.system_id;
+        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+        let this_system = inner.system_id;
+        let this_component = inner.component_id;
+        let sender = inner.get_sender().await;
+        let mut receiver = inner.get_receiver().await;
+        let encoding = inner.encoding.read().await.clone();
 
         let header = MavHeader {
             system_id: this_system,
@@ -376,19 +345,9 @@ impl MavlinkComponent {
     }
 
     #[instrument(level = "debug", skip(inner))]
-    async fn wait_for_param(
-        inner: Arc<RwLock<ComponentInner>>,
-        param_name: &str,
-    ) -> Result<Parameter> {
-        let mut receiver;
-        let encoding;
-
-        {
-            let inner_guard = inner.read().await;
-
-            receiver = inner_guard.get_receiver().await;
-            encoding = inner_guard.encoding;
-        }
+    async fn wait_for_param(inner: Arc<ComponentInner>, param_name: &str) -> Result<Parameter> {
+        let mut receiver = inner.get_receiver().await;
+        let encoding = inner.encoding.read().await.clone();
 
         let mut max_retries = 5;
         while max_retries > 0 {
@@ -452,25 +411,15 @@ impl MavlinkComponent {
 
     #[instrument(level = "debug", skip(inner))]
     async fn set_param_inner(
-        inner: Arc<RwLock<ComponentInner>>,
+        inner: Arc<ComponentInner>,
         parameter: Parameter,
     ) -> Result<Parameter> {
-        let target_system;
+        let target_system = inner.system_id;
         let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
-        let this_system;
-        let this_component;
-        let sender;
-        let encoding;
-
-        {
-            let inner_guard = inner.read().await;
-
-            target_system = inner_guard.system_id;
-            this_system = inner_guard.system_id;
-            this_component = inner_guard.component_id;
-            sender = inner_guard.get_sender().await;
-            encoding = inner_guard.encoding;
-        }
+        let this_system = inner.system_id;
+        let this_component = inner.component_id;
+        let sender = inner.get_sender().await;
+        let encoding = inner.encoding.read().await.clone();
 
         let header = MavHeader {
             system_id: this_system,
@@ -524,6 +473,6 @@ impl MavlinkComponent {
 
     #[instrument(level = "debug", skip(self))]
     pub async fn encoding(&self) -> ParamEncodingType {
-        self.inner.read().await.encoding
+        self.inner.encoding.read().await.clone()
     }
 }

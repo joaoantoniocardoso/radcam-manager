@@ -179,10 +179,11 @@ impl MavlinkComponent {
         })
         .await
     }
+
     #[instrument(level = "debug", skip(self))]
     pub async fn reboot_autopilot(&self) -> Result<()> {
         // This is a workaround to this issue: https://github.com/bluerobotics/radcam-manager/issues/57
-        blueos_client::reboot_autopilot().await
+        blueos_client::reboot_autopilot().await?;
 
         // FIXME: once the aforementioned issue is fixed, we can use the code below:
         // let target_system = { self.inner.read().await.system_id };
@@ -196,7 +197,72 @@ impl MavlinkComponent {
         //     param1: 1.0, // autopilot
         //     ..Default::default()
         // })
-        // .await
+        // .await?;
+
+        // Give autopilot some time to shutdown before waiting for it to come back online
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+        self.wait_autopilot().await?;
+
+        Self::configure_parameter_encoding(self.inner.clone()).await;
+        Self::update_all_params(self.inner.clone()).await;
+
+        Ok(())
+    }
+
+    pub async fn wait_autopilot(&self) -> Result<()> {
+        info!("Waiting for autopilot to come back online...");
+
+        let target_system = self.inner.system_id;
+        let target_component = mavlink::ardupilotmega::MavComponent::MAV_COMP_ID_AUTOPILOT1 as u8;
+        let mut receiver = self.inner.get_receiver().await;
+
+        let wait_command_ack = async {
+            loop {
+                use broadcast::error::RecvError;
+
+                match receiver.recv().await {
+                    Ok(Message::Received((recv_header, recv_message)))
+                        if recv_header.system_id == target_system
+                            && recv_header.component_id == target_component
+                            && matches!(recv_message, MavMessage::COMMAND_ACK(_)) =>
+                    {
+                        if let MavMessage::HEARTBEAT(heartbeat) = recv_message {
+                            use mavlink::ardupilotmega::MavState;
+
+                            if matches!(
+                                heartbeat.system_status,
+                                MavState::MAV_STATE_ACTIVE | MavState::MAV_STATE_STANDBY
+                            ) {
+                                info!(
+                                    "Received autopilot {target_system}:{target_component} heartbeat: {heartbeat:?}!"
+                                );
+
+                                return Ok(());
+                            }
+                        }
+                    }
+                    Ok(_) => continue,
+                    Err(RecvError::Closed) => {
+                        return Err(anyhow!("Receiver channel closed"));
+                    }
+                    Err(RecvError::Lagged(n)) => {
+                        warn!("Receiver lagged by {n} messages");
+                        continue;
+                    }
+                }
+            }
+        };
+
+        match tokio::time::timeout(tokio::time::Duration::from_secs(15), wait_command_ack).await {
+            Ok(res) => return res,
+            Err(_) => {
+                warn!("Timeout waiting for autopilot {target_system}:{target_component}, retrying");
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            }
+        }
+
+        Ok(())
     }
 
     #[instrument(level = "debug", skip(self))]
