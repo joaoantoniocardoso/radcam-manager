@@ -5,6 +5,7 @@ use tracing::*;
 
 use crate::{api, control_inner};
 
+#[instrument(level = "trace")]
 pub fn router() -> Router {
     Router::new()
         .route("/control", post(control))
@@ -12,6 +13,7 @@ pub fn router() -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
+#[instrument(level = "debug")]
 pub async fn control(actuators_control: Json<api::ActuatorsControl>) -> impl IntoResponse {
     let res = match control_inner(actuators_control).await {
         Ok(res) => res,

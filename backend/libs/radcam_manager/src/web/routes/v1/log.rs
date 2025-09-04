@@ -21,6 +21,7 @@ pub fn router() -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
+#[instrument(level = "debug")]
 async fn log_websocket_handler(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(log_websocket_connection)
 }
