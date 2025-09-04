@@ -854,11 +854,6 @@ const getVideoParameters = (update: boolean) => {
 
       if (update) {
         update_video_parameter_values(settings)
-        tempVideoChanges.value = {
-          pic_width: null,
-          pic_height: null,
-          bitrate: null,
-        }
       }
     })
     .catch((error) => console.error(`Error sending getVencConf request:`, error.message))
@@ -923,27 +918,32 @@ const update_video_parameter_values = (settings: VideoParameterSettings) => {
   selectedVideoParameters.value = { ...settings }
   selectedVideoParameters.value.pixel_list = undefined
 
-  const matchOption = resolutionOptions.value.find(                   
-    o => o.value.width === settings.pic_width &&                     
-         o.value.height === settings.pic_height                      
-  )                                                                  
+  const width = settings.pic_width
+  const height = settings.pic_height
 
-const width = settings.pic_width
-const height = settings.pic_height
+  let matchOption = resolutionOptions.value.find(                   
+    o => o.value.width === width && o.value.height === height                      
+  )
 
-if (matchOption) {
-  selectedVideoResolution.value = matchOption.value
-  return
-}
+  if (!matchOption && width && height) {
+    const injectedValue = { width, height }
+    resolutionOptions.value.push({ name: `${width}x${height}`, value: injectedValue })
+    matchOption = resolutionOptions.value[resolutionOptions.value.length - 1]
+  }
 
-if (width && height) {
-  const injectedValue = { width, height }
-  resolutionOptions.value.push({ name: `${width}x${height}`, value: injectedValue })
-  selectedVideoResolution.value = injectedValue
-  return
-}
+  if (matchOption) {
+    selectedVideoResolution.value = matchOption.value
+  } else {
+    selectedVideoResolution.value = null
+  }
 
-selectedVideoResolution.value = null                                                                 
+  selectedVideoBitrate.value = settings.bitrate ?? null
+  
+  tempVideoChanges.value = {
+    pic_width: null,
+    pic_height: null,
+    bitrate: null,
+  }
 }
 
 
