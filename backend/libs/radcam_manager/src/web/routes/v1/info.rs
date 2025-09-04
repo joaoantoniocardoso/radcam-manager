@@ -24,6 +24,7 @@ pub struct Info {
     service: InfoContent,
 }
 
+#[instrument(level = "trace")]
 pub fn router() -> Router {
     Router::new()
         .route("/", get(info))
