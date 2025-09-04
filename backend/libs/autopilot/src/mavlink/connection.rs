@@ -1,14 +1,28 @@
-use std::time::Duration;
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+};
 
 use anyhow::Result;
 use mavlink::{AsyncMavConnection, MavHeader, ardupilotmega::MavMessage};
-use tokio::sync::broadcast;
+use tokio::sync::{Notify, RwLock, broadcast};
 use tracing::*;
 
+#[derive(Clone)]
 pub struct Connection {
     address: String,
-    inner: Option<Box<dyn AsyncMavConnection<MavMessage> + Sync + Send>>,
+    inner: Arc<RwLock<Box<dyn AsyncMavConnection<MavMessage> + Sync + Send>>>,
+    coordinator: Arc<ReconnectCoordinator>,
     sender: broadcast::Sender<Message>,
+}
+
+#[derive(Default)]
+struct ReconnectCoordinator {
+    notify: Notify,
+    is_running: AtomicBool,
 }
 
 #[derive(Debug, Clone)]
@@ -20,13 +34,16 @@ pub enum Message {
 impl Connection {
     #[instrument(level = "debug")]
     pub async fn new(address: String) -> Self {
-        let inner = Some(Self::connect(&address).await);
+        let inner = Arc::new(RwLock::new(Self::connect(&address).await));
 
         let (sender, _receiver) = broadcast::channel::<Message>(10000);
+
+        let coordinator = Arc::new(ReconnectCoordinator::default());
 
         Self {
             address,
             inner,
+            coordinator,
             sender,
         }
     }
@@ -63,7 +80,9 @@ impl Connection {
 
     async fn send_inner(&mut self, header: &MavHeader, message: &MavMessage) {
         loop {
-            if let Some(mavlink) = &self.inner {
+            {
+                let mavlink = self.inner.read().await;
+
                 match mavlink.send(header, message).await {
                     Ok(_) => return,
                     Err(error) => {
@@ -78,20 +97,20 @@ impl Connection {
 
     pub async fn recv(&mut self, timeout: Duration) -> (MavHeader, MavMessage) {
         loop {
-            if let Some(mavlink) = &self.inner {
+            {
+                let mavlink = self.inner.read().await;
+
                 match tokio::time::timeout(timeout, mavlink.recv()).await {
-                    Ok(result) => match result {
-                        Ok(inner) => return inner,
-                        Err(mavlink::error::MessageReadError::Io(error)) => {
-                            error!("Failed receiving message: {error:?}");
-                        }
-                        Err(mavlink::error::MessageReadError::Parse(error)) => {
-                            warn!("Failed receiving message: {error:?}");
-                            continue;
-                        }
-                    },
+                    Ok(Ok(inner)) => return inner,
+                    Ok(Err(mavlink::error::MessageReadError::Io(error))) => {
+                        error!("Failed receiving message: {error:?}");
+                    }
+                    Ok(Err(mavlink::error::MessageReadError::Parse(error))) => {
+                        warn!("Failed receiving message: {error:?}");
+                        continue;
+                    }
                     Err(_) => {
-                        error!("Timeout while receiving message. Reconnecting...");
+                        error!("Timeout while receiving message...");
                     }
                 }
             }
@@ -101,7 +120,17 @@ impl Connection {
     }
 
     pub async fn reconnect(&mut self) {
-        self.inner.replace(Connection::connect(&self.address).await);
+        let coordinator = self.coordinator.clone();
+
+        if coordinator.is_running.swap(true, Ordering::AcqRel) {
+            coordinator.notify.notified().await;
+            return;
+        }
+
+        *self.inner.write().await = Self::connect(&self.address).await;
+
+        coordinator.is_running.store(false, Ordering::Release);
+        coordinator.notify.notify_waiters();
     }
 
     pub fn get_sender(&self) -> broadcast::Sender<Message> {
