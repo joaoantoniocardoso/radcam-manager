@@ -94,8 +94,6 @@ impl Manager {
 
         actuators.state = current_state;
 
-        self.settings.save().await?;
-
         Ok(current_state)
     }
 
@@ -166,8 +164,6 @@ impl Manager {
         if let Some(_tilt) = new_state.tilt {
             warn!("TILT NOT IMPLEMENTED!");
         }
-
-        self.settings.save().await?;
 
         Ok(*new_state)
     }

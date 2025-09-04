@@ -125,14 +125,5 @@ pub(crate) async fn control_inner(
         }
     };
 
-    settings::MANAGER
-        .get()
-        .unwrap()
-        .write()
-        .await
-        .settings
-        .save()
-        .await?;
-
     Ok(res)
 }
