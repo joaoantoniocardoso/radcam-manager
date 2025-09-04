@@ -191,4 +191,5 @@ fn filter_unwanted_crates(env_filter: EnvFilter) -> EnvFilter {
         .add_directive("hyper=off".parse().unwrap())
         // Reducing verbosity for whe we make requests to other backends
         .add_directive("reqwest=off".parse().unwrap())
+        .add_directive("tower_http=off".parse().unwrap())
 }
