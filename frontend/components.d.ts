@@ -12,15 +12,17 @@ declare module 'vue' {
     BlueSelect: typeof import('./src/components/BlueSelect.vue')['default']
     BlueSlider: typeof import('./src/components/BlueSlider.vue')['default']
     BlueSwitch: typeof import('./src/components/BlueSwitch.vue')['default']
+    ErrorDialog: typeof import('./src/components/ErrorDialog.vue')['default']
     ExpansibleOptions: typeof import('./src/components/ExpansibleOptions.vue')['default']
     ExpansiblePanel: typeof import('./src/components/ExpansiblePanel.vue')['default']
     ImageTab: typeof import('./src/components/ImageTab.vue')['default']
     Loading: typeof import('./src/components/Loading.vue')['default']
-    OperationError: typeof import('./src/components/common/OperationError.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Slider: typeof import('./src/components/Slider.vue')['default']
     SpinningLogo: typeof import('./src/components/common/SpinningLogo.vue')['default']
     StreamsTab: typeof import('./src/components/StreamsTab.vue')['default']
+    WarningToast: typeof import('./src/components/WarningToast.vue')['default']
+    WelcomeDialog: typeof import('./src/components/WelcomeDialog.vue')['default']
   }
 }

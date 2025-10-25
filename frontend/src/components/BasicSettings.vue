@@ -1,12 +1,13 @@
 <template>
-  <div class="px-6 py-4 gap-y-6">
+  <div class="px-6 py-4">
     <ExpansiblePanel
       title="Image"
-      expanded
+      :expanded="isConfigured"
       theme="dark"
     >
       <BlueButtonGroup
-        label="Water environment for OPWB"
+        label="Water environment for One-Push White Balance"
+        :disabled="!isConfigured || props.disabled"
         :button-items="[
           { name: 'Green', onSelected: () => (OPWBMode = 'green') },
           { name: 'Blue', onSelected: () => (OPWBMode = 'blue') },
@@ -17,16 +18,18 @@
 
       <BlueButtonGroup
         label="RGB setpoints"
+        :disabled="!isConfigured || props.disabled"
         :button-items="RGBSetpointProfiles"
         :buttons-menu="[
           { name: 'Add new profile', action: () => (openRGBSetpointForm = true), menuItemDisabled: RGBSetpointProfiles.length > 3 },
           { name: 'Delete profile', action: () => openRGBSetpointDelete = true, menuItemDisabled: RGBSetpointProfiles.length === 1 },
         ]"
         theme="dark"
-        class="mt-6"
+        class="mt-5"
         type="switch"
       />
       <ExpansibleOptions
+        :disabled="!isConfigured || props.disabled"
         :is-open="openRGBSetpointOptions"
         button-class="mt-[-25px] ml-[155px]"
         content-class="mt-4"
@@ -35,6 +38,7 @@
         <div class="flex flex-col justify-end items-end">
           <BlueSlider
             v-model="currentRGBSetpointValue[0]"
+            :disabled="!isConfigured || props.disabled"
             name="awb_red"
             label="WB Red"
             color="red"
@@ -48,6 +52,7 @@
           />
           <BlueSlider
             v-model="currentRGBSetpointValue[1]"
+            :disabled="!isConfigured || props.disabled"
             name="green-setpoint"
             label="WB Green"
             color="green"
@@ -61,6 +66,7 @@
           />
           <BlueSlider
             v-model="currentRGBSetpointValue[2]"
+            :disabled="!isConfigured || props.disabled"
             name="blue-setpoint"
             label="WB Blue"
             color="#0B5087"
@@ -75,7 +81,8 @@
         </div>
       </ExpansibleOptions>
       <BlueSwitch
-        v-model="focusAndZoomParams.enable_focus_and_zoom_correlation"
+        v-model="currentFocusAndZoomParams.enable_focus_and_zoom_correlation"
+        :disabled="!isConfigured || props.disabled"
         name="focus-zoom-correlation"
         label="Focus and zoom correlation"
         theme="dark"
@@ -84,6 +91,7 @@
       />
       <BlueSlider
         v-model="focusOffsetUI"
+        :disabled="!isConfigured || props.disabled"
         name="focus-offset"
         label="Focus offset"
         :min="-10"
@@ -91,28 +99,30 @@
         :step="0.1"
         width="400px"
         theme="dark"
-        class="mt-5"
+        class="mt-6"
         @update:model-value="onFocusOffsetChange($event ?? 0)"
       />
     </ExpansiblePanel>
     <ExpansiblePanel
       title="Video"
-      :expanded="cockpitMode ? false : true"
+      :expanded="isConfigured && !cockpitMode"
       theme="dark"
     >
       <BlueSelect
         v-model="selectedVideoResolution"
-        label="Cockpit display"
+        :disabled="!isConfigured || props.disabled"
+        label="Resolution"
         :items="resolutionOptions || [{ name: 'No resolutions available', value: null }]"
         theme="dark"
         @update:model-value="(value: any) => handleVideoChanges('resolution', value)"
       />
       <BlueSelect
         v-model="selectedVideoBitrate"
+        :disabled="!isConfigured || props.disabled"
         label="Bitrate"
         :items="bitrateOptions || [{ name: 'No bitrates available', value: null }]"
         theme="dark"
-        class="mt-5"
+        class="mt-6"
         @update:model-value="(value: any) => handleVideoChanges('bitrate', value)"
       >
         <template #insetElement>
@@ -189,10 +199,12 @@
         class="flex justify-end mt-8 mb-[-20px]"
       >
         <v-btn
-          class="py-1 px-3 rounded-md bg-[#0B5087] text-white hover:bg-[#0A3E6B]"
+          :disabled="!isConfigured || props.disabled"
+          class="py-1 px-3 rounded-md bg-[#0B5087] hover:bg-[#0A3E6B]"
           :class="{ 'opacity-50 pointer-events-none': !hasUnsavedVideoChanges }"
           size="small"
           variant="elevated"
+          theme="dark"
           @click="saveVideoDataAndRestart"
         >
           SAVE AND RESTART CAMERA
@@ -201,12 +213,13 @@
     </ExpansiblePanel>
     <ExpansiblePanel
       title="Actuators"
-      expanded
+      :expanded="isConfigured"
       theme="dark"
     >
       <BlueSlider
         v-if="actuatorsState"
         v-model="actuatorsState.focus"
+        :disabled="!isConfigured || props.disabled"
         name="focus"
         label="Focus"
         :min="0"
@@ -217,12 +230,12 @@
         label-max="∞"
         width="400px"
         theme="dark"
-        class="mt-5"
         @update:model-value="updateActuatorsState('focus', $event as number)"
       />
       <BlueSlider
         v-if="actuatorsState"
         v-model="actuatorsState.zoom"
+        :disabled="!isConfigured || props.disabled"
         name="zoom"
         label="Zoom"
         :min="0"
@@ -233,98 +246,383 @@
         label-max="3x"
         width="400px"
         theme="dark"
-        class="mt-5"
+        class="mt-6"
         @update:model-value="updateActuatorsState('zoom', $event as number)"
       />
       <BlueSlider
-        v-if="actuatorsState"
+        v-if="actuatorsState && false"
         v-model="actuatorsState.tilt"
+        :disabled="!isConfigured || props.disabled"
         name="tilt"
         label="Tilt"
         :min="0"
         :max="100"
         :step="1"
         :format-value="formatTiltValue"
-        :label-min="`${focusAndZoomParams.tilt_mnt_pitch_min !== null ? focusAndZoomParams.tilt_mnt_pitch_min : -90}°`"
-        :label-max="`${focusAndZoomParams.tilt_mnt_pitch_max !== null ? focusAndZoomParams.tilt_mnt_pitch_max : 90}°`"
+        :label-min="`${currentFocusAndZoomParams.tilt_mnt_pitch_min !== null ? currentFocusAndZoomParams.tilt_mnt_pitch_min : -90}°`"
+        :label-max="`${currentFocusAndZoomParams.tilt_mnt_pitch_max !== null ? currentFocusAndZoomParams.tilt_mnt_pitch_max : 90}°`"
         width="400px"
         theme="dark"
-        class="mt-5"
+        class="mt-6"
         @update:model-value="updateActuatorsState('tilt', $event as number)"
       />
     </ExpansiblePanel>
     <ExpansiblePanel
       title="Hardware setup"
-      :expanded="cockpitMode ? false : true"
+      :expanded="!isConfigured"
       theme="dark"
     >
-      <div class="mb-4 p-3">
-        Please select below each correspondent channel pin from the Navigator Board each cable is connected to. 
-        The recommended is focus 10, zoom 11, script 12, tilt 16.
+      <div>
+        <p class="mb-3">
+          Assign Navigator PWM output channels to your camera functions below. The recommended setup is:
+        </p>
+        <ul class="list-disc pl-5 mb-4 text-sm">
+          <li><b>Focus</b>: Connect the camera's Focus cable to Navigator's <b>PWM Channel 10</b></li>
+          <li><b>Zoom</b>: Connect the camera's Zoom cable to Navigator's <b>PWM Channel 11</b></li>
+          <li><b>Script</b>: Navigator's <b>PWM Channel 12</b> is used as an <i>input</i> used by the internal Lua script that enables Focus/Zoom correlation (no physical cable connects here)</li>
+          <li><b>Tilt</b>: Connect the camera's Tilt cable to Navigator's <b>PWM Channel 16</b></li>
+        </ul>
+        <p class="mb-3">
+          Click <b>APPLY DEFAULT HARDWARE SETUP</b> to use the recommended configuration above, or click <b>ADVANCED SETUP</b> to customize your channel assignments and parameters.
+        </p>
       </div>
 
-      <BlueSelect
-        v-model="tempChannelChanges.focus_channel"
-        label="Focus PWM output"
-        :items="availableServoChannelOptions"
-        theme="dark"
-        @update:model-value="handleChannelChanges('focus_channel', $event)"
-      />
-      <BlueSelect
-        v-model="tempChannelChanges.zoom_channel"
-        label="Zoom PWM output"
-        :items="availableServoChannelOptions"
-        theme="dark"
-        class="mt-6"
-        @update:model-value="handleChannelChanges('zoom_channel', $event)"
-      />
-      <BlueSelect
-        v-model="tempChannelChanges.script_channel"
-        label="Script PWM input"
-        :items="availableServoChannelOptions"
-        theme="dark"
-        class="mt-6"
-        @update:model-value="handleChannelChanges('script_channel', $event)"
-      />
-      <BlueSelect
-        v-model="tempChannelChanges.tilt_channel"
-        label="Tilt PWM output"
-        :items="availableServoChannelOptions"
-        theme="dark"
-        class="mt-6"
-        @update:model-value="handleChannelChanges('tilt_channel', $event)"
-      />
-      <ExpansibleOptions
-        :is-open="openRGBSetpointOptions"
-        button-class="mt-[-24px] ml-[180px]"
-        content-class="mt-4"
-        :class="{ 'border-b-[1px] border-[#ffffff11] pb-2': openRGBSetpointOptions }"
+      <!-- Default Simple Setup -->
+      <div
+        v-if="!showAdvancedHardware"
+        class="mb-4 p-3"
       >
-        <BlueSwitch
-          v-model="tempChannelChanges.tilt_channel_reversed"
-          name="tilt-channel-reversed"
-          label="Tilt channel reversed"
+        <div class="d-flex flex-row ga-3 mt-5 justify-end">
+          <v-btn
+            :disabled="props.disabled"
+            class="py-1 px-3 ml-4 rounded-md bg-[#414141] hover:bg-[#0A3E6B]"
+            size="small"
+            variant="elevated"
+            theme="dark"
+            @click="showAdvancedHardware = true"
+          >
+            Advanced setup
+          </v-btn>
+          <v-btn
+            class="py-1 px-3 ml-4 rounded-md bg-[#0B5087] hover:bg-[#0A3E6B]"
+            size="small"
+            variant="elevated"
+            :disabled="isLoading || props.disabled"
+            :loading="isLoading"
+            theme="dark"
+            @click="saveHardwareSetup"
+          >
+            APPLY DEFAULT HARDWARE SETUP
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- Advanced Setup -->
+      <div v-else>
+        <!-- Focus Group -->
+        <ExpansiblePanel
+          title="Focus"
+          expanded
           theme="dark"
-          class="scale-90 origin-right"
-          @update:model-value="handleChannelChanges('tilt_channel_reversed', $event)"
-        />
-      </ExpansibleOptions>
-      <div class="flex justify-end mt-6">
-        <v-btn
-          class="py-1 px-3 rounded-md bg-[#0B5087] text-white hover:bg-[#0A3E6B]"
-          size="small"
-          variant="elevated"
-          :disabled="!isHardwareSetupComplete || hasDuplicateChannels || isLoading"
-          :loading="isLoading"
-          @click="saveHardwareSetup"
         >
-          SAVE HARDWARE SETUP
-        </v-btn>
+          <BlueSelect
+            v-model="intendedFocusAndZoomParams.focus_channel"
+            :disabled="props.disabled"
+            label="PWM Output Channel"
+            :items="availableServoChannelOptions"
+            :error-messages="channelErrors.focus_channel ? [channelErrors.focus_channel] : []"
+            theme="dark"
+            @update:model-value="handleChannelChanges('focus_channel', $event)"
+          />
+          <div class="d-flex flex-row ga-3 mt-5">
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.focus_channel_min"
+              :disabled="props.disabled"
+              label="Min (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.focus_channel_trim"
+              :disabled="props.disabled"
+              label="Trim (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.focus_channel_max"
+              :disabled="props.disabled"
+              label="Max (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+          </div>
+          <v-text-field
+            v-model.number="intendedFocusAndZoomParams.focus_margin_gain"
+            :disabled="props.disabled"
+            type="number"
+            label="Focus Margin Gain"
+            density="compact"
+            hide-details
+            theme="dark"
+            variant="outlined"
+            class="mt-5"
+          />
+        </ExpansiblePanel>
+
+        <!-- Zoom Group -->
+        <ExpansiblePanel
+          title="Zoom"
+          expanded
+          theme="dark"
+        >
+          <BlueSelect
+            v-model="intendedFocusAndZoomParams.zoom_channel"
+            :disabled="props.disabled"
+            label="PWM Output Channel"
+            :items="availableServoChannelOptions"
+            :error-messages="channelErrors.zoom_channel ? [channelErrors.zoom_channel] : []"
+            theme="dark"
+            @update:model-value="handleChannelChanges('zoom_channel', $event)"
+          />
+          <div class="d-flex flex-row ga-3 mt-5">
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.zoom_channel_min"
+              :disabled="props.disabled"
+              label="Min (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.zoom_channel_trim"
+              :disabled="props.disabled"
+              label="Trim (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.zoom_channel_max"
+              :disabled="props.disabled"
+              label="Max (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+          </div>
+        </ExpansiblePanel>
+
+        <!-- Script Group -->
+        <ExpansiblePanel
+          title="Script"
+          expanded
+          theme="dark"
+        >
+          <BlueSelect
+            v-model="intendedFocusAndZoomParams.script_channel"
+            :disabled="props.disabled"
+            label="PWM Input Channel"
+            :items="availableServoChannelOptions"
+            :error-messages="channelErrors.script_channel ? [channelErrors.script_channel] : []"
+            theme="dark"
+            @update:model-value="handleChannelChanges('script_channel', $event)"
+          />
+          <div class="d-flex flex-row ga-3 mt-5">
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.script_channel_min"
+              :disabled="props.disabled"
+              label="Min (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.script_channel_trim"
+              :disabled="props.disabled"
+              label="Trim (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.script_channel_max"
+              :disabled="props.disabled"
+              label="Max (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+          </div>
+          <div class="d-flex flex-column ga-4 mt-4">
+            <BlueSelect
+              v-model="intendedFocusAndZoomParams.script_function"
+              :disabled="props.disabled"
+              label="Script Function"
+              :items="scriptFunctionOptions"
+              theme="dark"
+              item-title="name"
+              item-value="value"
+            />
+            <BlueSelect
+              v-model="intendedFocusAndZoomParams.camera_id"
+              :disabled="props.disabled"
+              label="Camera ID"
+              :items="cameraIdOptions"
+              theme="dark"
+              item-title="name"
+              item-value="value"
+            />
+            <BlueSwitch
+              v-model="intendedFocusAndZoomParams.enable_focus_and_zoom_correlation"
+              :disabled="props.disabled"
+              name="focus-zoom-correlation"
+              label="Focus/Zoom Correlation"
+              theme="dark"
+            />
+          </div>
+        </ExpansiblePanel>
+
+        <!-- Tilt Group -->
+        <ExpansiblePanel
+          title="Tilt"
+          expanded
+          theme="dark"
+        >
+          <BlueSelect
+            v-model="intendedFocusAndZoomParams.tilt_channel"
+            :disabled="props.disabled"
+            label="PWM Output Channel"
+            :items="availableServoChannelOptions"
+            :error-messages="channelErrors.tilt_channel ? [channelErrors.tilt_channel] : []"
+            theme="dark"
+            @update:model-value="handleChannelChanges('tilt_channel', $event)"
+          />
+          <div class="d-flex flex-row ga-3 mt-5">
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.tilt_channel_min"
+              :disabled="props.disabled"
+              label="Min (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.tilt_channel_trim"
+              :disabled="props.disabled"
+              label="Trim (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.tilt_channel_max"
+              :disabled="props.disabled"
+              label="Max (µs)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+          </div>
+          <div class="d-flex flex-row ga-3 pt-4">
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.tilt_mnt_pitch_min"
+              :disabled="props.disabled"
+              label="Pitch Min (°)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model.number="intendedFocusAndZoomParams.tilt_mnt_pitch_max"
+              :disabled="props.disabled"
+              label="Pitch Max (°)"
+              type="number"
+              density="compact"
+              hide-details
+              theme="dark"
+              variant="outlined"
+            />
+          </div>
+          <div class="d-flex flex-column ga-4 mt-4">
+            <BlueSwitch
+              v-model="intendedFocusAndZoomParams.tilt_channel_reversed"
+              :disabled="props.disabled"
+              name="tilt-channel-reversed"
+              label="Reverse Direction"
+              theme="dark"
+            />
+            <BlueSelect
+              v-model="intendedFocusAndZoomParams.tilt_mnt_type"
+              :disabled="props.disabled"
+              label="Mount Type"
+              :items="mountTypeOptions"
+              theme="dark"
+              item-title="name"
+              item-value="value"
+            />
+          </div>
+        </ExpansiblePanel>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-row ga-3 mt-5 justify-end">
+          <v-btn
+            :disabled="props.disabled"
+            class="py-1 px-3 ml-4 rounded-md bg-[#414141] hover:bg-[#0A3E6B]"
+            size="small"
+            variant="elevated"
+            theme="dark"
+            @click="showAdvancedHardware = false"
+          >
+            Back to simple
+          </v-btn>
+          <v-btn
+            class="py-1 px-3 ml-4 rounded-md bg-[#0B5087] hover:bg-[#0A3E6B]"
+            size="small"
+            variant="elevated"
+            :disabled="hasChannelErrors || isLoading || props.disabled"
+            :loading="isLoading"
+            theme="dark"
+            @click="saveHardwareSetup"
+          >
+            APPLY CUSTOM HARDWARE SETUP
+          </v-btn>
+        </div>
       </div>
     </ExpansiblePanel>
   </div>
   <v-dialog
     v-model="openRGBSetpointForm"
+    :disabled="!isConfigured || props.disabled"
     width="400px"
   >
     <v-card class="bg-[#363636] text-white">
@@ -334,6 +632,7 @@
       <v-card-text>
         <v-text-field
           v-model="newRGBSetpointProfileName"
+          :disabled="props.disabled"
           label="Profile Name"
           required
           class="my-3 mx-2"
@@ -343,6 +642,7 @@
       </v-card-text>
       <v-card-actions class="px-4">
         <v-btn
+          :disabled="props.disabled"
           variant="text"
           class="opacity-70"
           @click="openRGBSetpointForm = false"
@@ -351,6 +651,7 @@
         </v-btn>
         <v-spacer />
         <v-btn
+          :disabled="props.disabled"
           color="white"
           @click="saveRGBSetpointProfile"
         >
@@ -361,6 +662,7 @@
   </v-dialog>
   <v-dialog
     v-model="openRGBSetpointDelete"
+    :disabled="!isConfigured || props.disabled"
     width="400px"
   >
     <v-card class="bg-[#363636] text-white">
@@ -372,6 +674,7 @@
       </v-card-text>
       <v-card-actions class="px-4">
         <v-btn
+          :disabled="props.disabled"
           variant="text"
           class="opacity-70"
           @click="openRGBSetpointDelete = false"
@@ -380,6 +683,7 @@
         </v-btn>
         <v-spacer />
         <v-btn
+          :disabled="props.disabled"
           color="red"
           @click="() => {
             RGBSetpointProfiles = RGBSetpointProfiles.filter(profile => profile.name !== currentRGBSetpointProfile)
@@ -391,11 +695,21 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <WelcomeDialog
+    :show="(!isConfigured) && showWelcomeDialog"
+    @close="showWelcomeDialog = false"
+  />
   <Loading :is-loading="isLoading" />
+  <ErrorDialog
+    :message="errorDialogMessage"
+    @close="errorDialogMessage = null"
+  />
+  <WarningToast :message="warningToastMessage" />
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import BlueButtonGroup from './BlueButtonGroup.vue'
 import BlueSlider from './BlueSlider.vue'
 import BlueSwitch from './BlueSwitch.vue'
@@ -405,8 +719,11 @@ import ExpansibleOptions from './ExpansibleOptions.vue'
 import Loading from './Loading.vue'
 import { VideoChannelValue, type BaseParameterSetting, type VideoParameterSettings, type VideoResolutionValue } from '@/bindings/radcam'
 import axios from 'axios'
-import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState } from '@/bindings/autopilot'
+import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState, CameraID, MountType, ScriptFunction, ServoChannel } from '@/bindings/autopilot'
 import { applyNonNull } from '@/utils/jsonUtils'
+import ErrorDialog from './ErrorDialog.vue'
+import WelcomeDialog from './WelcomeDialog.vue'
+import { OneMoreTime } from '@/utils/oneMoreTime'
 
 
 const props = defineProps<{
@@ -416,9 +733,14 @@ const props = defineProps<{
   cockpitMode: boolean
 }>()
 
-const servoChannelOptions = Array.from({ length: 16 }, (_, i) => ({
+interface ServoChannelOption {
+  name: string
+  value: ServoChannel
+}
+
+const servoChannelOptions: ServoChannelOption[] = Array.from({ length: 16 }, (_, i) => ({
   name: `Channel ${i + 1}`,
-  value: `SERVO${i + 1}`,
+  value: `SERVO${i + 1}` as ServoChannel,
 }))
 
 const baseParams = ref<BaseParameterSetting>({
@@ -456,7 +778,7 @@ const baseParams = ref<BaseParameterSetting>({
   rotate: null,
 })
 
-const focusAndZoomParams = ref<ActuatorsParametersConfig>({
+const currentFocusAndZoomParams = ref<ActuatorsParametersConfig>({
   camera_id: null,
   focus_channel: null,
   focus_channel_min: null,
@@ -503,20 +825,63 @@ const actuatorsState = ref<ActuatorsState>({
   zoom: 0,
   tilt: 0,
 })
+const isConfigured = ref<boolean>(true)
+const showWelcomeDialog = ref<boolean>(true)
 const isLoading = ref<boolean>(false)
-const hasUnsavedChannelChanges = ref<boolean>(false)
-const tempChannelChanges = ref<{
-  focus_channel: string | null
-  zoom_channel: string | null
-  tilt_channel: string | null
-  tilt_channel_reversed: boolean | null
-  script_channel: string | null
-}>({
+const errorDialogMessage = ref<string | null>(null)
+const warningToastMessage = ref<string | null>(null)
+const showAdvancedHardware = ref(false)
+const intendedFocusAndZoomParams = ref<ActuatorsParametersConfig>({
+  camera_id: null,
   focus_channel: null,
-  zoom_channel: null,
-  tilt_channel: null,
-  tilt_channel_reversed: null,
+  focus_channel_min: null,
+  focus_channel_trim: null,
+  focus_channel_max: null,
+  focus_margin_gain: null,
+  script_function: null,
   script_channel: null,
+  script_channel_min: null,
+  script_channel_trim: null,
+  script_channel_max: null,
+  enable_focus_and_zoom_correlation: null,
+  zoom_channel: null,
+  zoom_channel_min: null,
+  zoom_channel_trim: null,
+  zoom_channel_max: null,
+  tilt_channel: null,
+  tilt_channel_min: null,
+  tilt_channel_trim: null,
+  tilt_channel_max: null,
+  tilt_channel_reversed: null,
+  tilt_mnt_type: null,
+  tilt_mnt_pitch_min: null,
+  tilt_mnt_pitch_max: null,
+})
+const defaultFocusAndZoomParams = ref<ActuatorsParametersConfig>({
+  camera_id: null,
+  focus_channel: null,
+  focus_channel_min: null,
+  focus_channel_trim: null,
+  focus_channel_max: null,
+  focus_margin_gain: null,
+  script_function: null,
+  script_channel: null,
+  script_channel_min: null,
+  script_channel_trim: null,
+  script_channel_max: null,
+  enable_focus_and_zoom_correlation: null,
+  zoom_channel: null,
+  zoom_channel_min: null,
+  zoom_channel_trim: null,
+  zoom_channel_max: null,
+  tilt_channel: null,
+  tilt_channel_min: null,
+  tilt_channel_trim: null,
+  tilt_channel_max: null,
+  tilt_channel_reversed: null,
+  tilt_mnt_type: null,
+  tilt_mnt_pitch_min: null,
+  tilt_mnt_pitch_max: null,
 })
 const hasUnsavedVideoChanges = ref<boolean>(false)
 const tempVideoChanges = ref<{
@@ -559,6 +924,70 @@ const h264BitrateTable = [
   { resolution: '1920x1080', high: { bitrate: 8192, storage: 3.6 }, medium: { bitrate: 4096, storage: 1.8 }, low: { bitrate: 2048, storage: 0.9 } }
 ]
 
+const hasUnsavedChanges = computed(() => {
+  const current = currentFocusAndZoomParams.value
+  const intended = intendedFocusAndZoomParams.value
+
+  // Compare every field
+  for (const key in current) {
+    if (Object.prototype.hasOwnProperty.call(current, key)) {
+      const currentVal = current[key as keyof ActuatorsParametersConfig]
+      const intendedVal = intended[key as keyof ActuatorsParametersConfig]
+
+      // Handle null/undefined equality
+      if (currentVal !== intendedVal) {
+        return true
+      }
+    }
+  }
+  return false
+})
+
+const channelErrors = computed(() => {
+  const errors: Record<keyof Pick<ActuatorsParametersConfig, 'focus_channel' | 'zoom_channel' | 'tilt_channel' | 'script_channel'>, string | null> = {
+    focus_channel: null,
+    zoom_channel: null,
+    tilt_channel: null,
+    script_channel: null,
+  }
+
+  const channels = [
+    'focus_channel',
+    'zoom_channel',
+    'tilt_channel',
+    'script_channel',
+  ] as const
+
+  // Check required
+  for (const key of channels) {
+    if (intendedFocusAndZoomParams.value[key] == null) {
+      errors[key] = 'Required'
+    }
+  }
+
+  // Check duplicates (only if all are selected)
+  const selected = channels.map(k => intendedFocusAndZoomParams.value[k]).filter(c => c !== null)
+  if (new Set(selected).size !== selected.length) {
+    // Mark duplicates
+    const seen = new Set<ServoChannel>()
+    for (const key of channels) {
+      const val = intendedFocusAndZoomParams.value[key]
+      if (val === null) continue
+      if (seen.has(val)) {
+        errors[key] = 'Duplicate channel'
+      } else {
+        seen.add(val)
+      }
+    }
+  }
+
+  return errors
+})
+
+const hasChannelErrors = computed(() => 
+  Object.values(channelErrors.value).some(err => err !== null)
+)
+
 const bitrateOptions = computed(() => {
   const res = selectedVideoResolution.value
   if (!res) return null
@@ -572,6 +1001,21 @@ const bitrateOptions = computed(() => {
     value: bitrate,
   }))
 })
+
+const cameraIdOptions = [
+  { name: 'CAM1', value: 'CAM1' },
+  { name: 'CAM2', value: 'CAM2' },
+] satisfies { name: string; value: CameraID }[];
+
+const scriptFunctionOptions = Array.from({ length: 16 }, (_, i) => ({
+  name: `SCRIPT${i + 1}`,
+  value: `SCRIPT${i + 1}` as ScriptFunction,
+}));
+
+const mountTypeOptions = [
+  { name: 'Servo', value: 'Servo' },
+  { name: 'Brushless PWM', value: 'BrushlessPWM' },
+] satisfies { name: string; value: MountType }[];
 
 const mapFocusUiToRaw = (ui: number, min: number, max: number): number => {
   if (max === min) return min
@@ -588,9 +1032,9 @@ const mapFocusRawToUi = (raw: number, min: number, max: number): number => {
 // Convert focus_channel_trim (raw, user defined on BlueOS) to UI value (-10 to 10) and vice versa
 const focusOffsetUI = computed<number>({
   get: () => {
-    const min = focusAndZoomParams.value.focus_channel_min
-    const max = focusAndZoomParams.value.focus_channel_max
-    let raw = focusAndZoomParams.value.focus_channel_trim
+    const min = currentFocusAndZoomParams.value.focus_channel_min
+    const max = currentFocusAndZoomParams.value.focus_channel_max
+    let raw = currentFocusAndZoomParams.value.focus_channel_trim
     if (raw! < min! || raw! > max!) {
       const averageRaw = Math.round((min! + max!) / 2)
       raw = averageRaw
@@ -598,16 +1042,16 @@ const focusOffsetUI = computed<number>({
     return mapFocusRawToUi(raw!, min!, max!)
   },
   set: (uiVal: number) => {
-    const min = focusAndZoomParams.value.focus_channel_min
-    const max = focusAndZoomParams.value.focus_channel_max
+    const min = currentFocusAndZoomParams.value.focus_channel_min
+    const max = currentFocusAndZoomParams.value.focus_channel_max
     if (min == null || max == null) return
-    focusAndZoomParams.value.focus_channel_trim = mapFocusUiToRaw(uiVal, min, max)
+    currentFocusAndZoomParams.value.focus_channel_trim = mapFocusUiToRaw(uiVal, min, max)
   },
 })
 
 const onFocusOffsetChange = (uiVal: number): void => {
-  const min = focusAndZoomParams.value.focus_channel_min
-  const max = focusAndZoomParams.value.focus_channel_max
+  const min = currentFocusAndZoomParams.value.focus_channel_min
+  const max = currentFocusAndZoomParams.value.focus_channel_max
   if (min == null || max == null) {
     return
   }
@@ -642,8 +1086,8 @@ const formatZoomValue = (raw: number): string => {
 }
 
 const formatTiltValue = (raw: number): string => {
-  const minAngle = focusAndZoomParams.value.tilt_mnt_pitch_min ?? -90
-  const maxAngle = focusAndZoomParams.value.tilt_mnt_pitch_max ?? 90
+  const minAngle = currentFocusAndZoomParams.value.tilt_mnt_pitch_min ?? -90
+  const maxAngle = currentFocusAndZoomParams.value.tilt_mnt_pitch_max ?? 90
 
   // Map raw [0, 100] → [minAngle, maxAngle]
   const angle = minAngle + (raw / 100) * (maxAngle - minAngle)
@@ -737,15 +1181,15 @@ const updateBaseParameter = (param: keyof BaseParameterSetting, value: any) => {
     },
   }
 
-  console.log(payload)
-
   axios
     .post(`${props.backendApi}/camera/control`, payload)
     .then((response) => {
       baseParams.value = response.data as BaseParameterSetting
     })
     .catch((error) => {
-      console.error(`Error sending ${String(param)} control with value '${value}':`, error.message)
+      const message = `Error sending ${String(param)} control with value '${value}'`
+      console.log(message, error.message)
+      showWarningToast(message, error)
     })
 }
 
@@ -758,31 +1202,73 @@ const getActuatorsConfig = () => {
     camera_uuid: props.selectedCameraUuid,
     action: "getActuatorsConfig",
   }
-  
-  console.log('# - getActuatorsConfig payload:', payload)
 
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
-    .then(response => {
+    .then((response) => {
       const newParams = (response.data as ActuatorsConfig)?.parameters
       if (newParams) {
-        focusAndZoomParams.value = { ...newParams }
-        tempChannelChanges.value = {
-          focus_channel: newParams.focus_channel,
-          zoom_channel: newParams.zoom_channel,
-          tilt_channel: newParams.tilt_channel,
-          tilt_channel_reversed: newParams.tilt_channel_reversed,
-          script_channel: newParams.script_channel,
+        currentFocusAndZoomParams.value = { ...newParams }
+
+        // Only update intended if user hasn't made changes
+        if (!hasUnsavedChanges.value) {
+          intendedFocusAndZoomParams.value = { ...newParams }
         }
-        hasUnsavedChannelChanges.value = false
       } else {
         console.warn("Received null 'parameters' from response:", response.data)
       }
       console.log('# - getActuatorsConfig response:', response.data)
 
     })
-    .catch(error => {
-      console.error(`Error sending getActuatorsConfig request:`, error.message)
+    .catch((error) => {
+      const message = 'Error getting actuator configuration'
+      console.log(message, error.message)
+      showWarningToast(message, error)
+    })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const checkIfConfigured = (error: any) => {
+  const details = error.response?.data?.message || error.response?.data || error.response || error.message || 'Unknown error'
+
+    if (typeof details === 'string' && details.toLowerCase().includes('actuators not configured')) {
+      isConfigured.value = false
+    } else {
+      isConfigured.value = true
+    }
+
+    return isConfigured.value
+}
+
+const getActuatorsDefaultConfig = () => {
+  // Only fetch once: if we don't have defaults yet
+  if (!props.selectedCameraUuid || defaultFocusAndZoomParams.value.camera_id !== null) {
+    return
+  }
+
+  const payload = {
+    camera_uuid: props.selectedCameraUuid,
+    action: "getActuatorsDefaultConfig",
+  }
+
+  axios
+    .post(`${props.backendApi}/autopilot/control`, payload)
+    .then((response) => {
+      const newParams = (response.data as ActuatorsConfig)?.parameters
+      if (newParams) {
+        defaultFocusAndZoomParams.value = { ...newParams }
+        // Initialize intended only if not already set
+        if (intendedFocusAndZoomParams.value.camera_id === null) {
+          intendedFocusAndZoomParams.value = { ...newParams }
+        }
+      }
+      console.log('# - getActuatorsDefaultConfig response:', response.data)
+
+    })
+    .catch((error) => {
+      const message = 'Error getting actuators default configuration'
+      console.log(message, error.message)
+      showWarningToast(message, error)
     })
 }
 
@@ -799,20 +1285,20 @@ const updateActuatorsConfig = (param: keyof ActuatorsParametersConfig, value: an
     json: { "parameters": { [param]: value } as ActuatorsParametersConfig} as ActuatorsConfig
   }
 
-  console.log(payload)
-
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
     .then((response) => {
       const newParams = (response.data as ActuatorsConfig)?.parameters
       if (newParams) {
-        focusAndZoomParams.value = { ...newParams }
+        currentFocusAndZoomParams.value = { ...newParams }
       } else {
         console.warn("Received null 'parameters' from response:", response.data)
       }
     })
     .catch((error) => {
-      console.error(`Error sending ${String(param)} control with value '${value}':`, error.message)
+      const message = `Error sending ${String(param)} control with value '${value}'`
+      console.log(message, error.message)
+      showErrorDialog(message, error)
     })
 }
 
@@ -826,18 +1312,18 @@ const getActuatorsState = () => {
     action: "getActuatorsState",
   }
 
-  console.log(payload)
-
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
-    .then(response => {
+    .then((response) => {
       const state = response.data as ActuatorsState
 
       applyNonNull(actuatorsState.value, state)
       console.log(state)
     })
-    .catch(error => {
-      console.error(`Error sending getActuatorsState request:`, error.message)
+    .catch((error) => {
+      const message = 'Error getting actuators state'
+      console.log(message, error.message)
+      showWarningToast(message, error)
     })
 }
 
@@ -850,81 +1336,79 @@ const updateActuatorsState = (param: keyof ActuatorsState, value: number) => {
     json: { [param]: value } as ActuatorsState
   }
 
-  console.log(payload)
-
   axios
     .post(`${props.backendApi}/autopilot/control`, payload)
-    .then(response => { 
+    .then((response) => { 
       const state = response.data as ActuatorsState;
 
       applyNonNull(actuatorsState.value, state)
       console.log(state)
     })
-    .catch(error => {
-      console.error(`Error updating ${param}:`, error.message)
+    .catch((error) => {
+      const message = `Error updating ${param}`
+      console.log(message, error.message)
+      showWarningToast(message, error)
     })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const showErrorDialog = (message: string, error: any) => {
+  if (error.response?.status === 404 || !checkIfConfigured(error)) return
+
+  const details = error.response?.data?.message || error.response?.data || error.response || error.message || error || 'Unknown error'
+  errorDialogMessage.value = `${message}: ${details}`
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const showWarningToast = (message: string, error: any) => {
+  if (error.response?.status === 404 || !checkIfConfigured(error)) return
+  
+  const details = error.response?.data?.message || error.response?.data || error.response || error.message || error || 'Unknown error'
+  warningToastMessage.value = `${message}: ${details}`
 }
 
 const isHardwareSetupComplete = computed<boolean>(() => {
   return (
-    tempChannelChanges.value.focus_channel !== null &&
-    tempChannelChanges.value.zoom_channel !== null &&
-    tempChannelChanges.value.tilt_channel !== null &&
-    tempChannelChanges.value.script_channel !== null
+    intendedFocusAndZoomParams.value.focus_channel !== null &&
+    intendedFocusAndZoomParams.value.zoom_channel !== null &&
+    intendedFocusAndZoomParams.value.tilt_channel !== null &&
+    intendedFocusAndZoomParams.value.script_channel !== null
   )
-})
-
-const hasDuplicateChannels = computed<boolean>(() => {
-  const channels = [
-    tempChannelChanges.value.focus_channel,
-    tempChannelChanges.value.zoom_channel,
-    tempChannelChanges.value.tilt_channel,
-    tempChannelChanges.value.script_channel
-  ].filter(channel => channel !== null)
-  
-  return new Set(channels).size !== channels.length
 })
 
 const availableServoChannelOptions = computed(() => {
   const selectedChannels = new Set([
-    tempChannelChanges.value.focus_channel,
-    tempChannelChanges.value.zoom_channel,
-    tempChannelChanges.value.tilt_channel,
-    tempChannelChanges.value.script_channel
+    intendedFocusAndZoomParams.value.focus_channel,
+    intendedFocusAndZoomParams.value.zoom_channel,
+    intendedFocusAndZoomParams.value.tilt_channel,
+    intendedFocusAndZoomParams.value.script_channel
   ].filter(channel => channel !== null))
 
   return servoChannelOptions.map(option => ({
     ...option,
-    disabled: selectedChannels.has(option.value) && 
-              option.value !== tempChannelChanges.value.focus_channel &&
-              option.value !== tempChannelChanges.value.zoom_channel &&
-              option.value !== tempChannelChanges.value.tilt_channel &&
-              option.value !== tempChannelChanges.value.script_channel
+    disabled: selectedChannels.has(option.value) &&
+      option.value !== intendedFocusAndZoomParams.value.focus_channel &&
+      option.value !== intendedFocusAndZoomParams.value.zoom_channel &&
+      option.value !== intendedFocusAndZoomParams.value.tilt_channel &&
+      option.value !== intendedFocusAndZoomParams.value.script_channel
   }))
 })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handleChannelChanges = ( param: keyof typeof tempChannelChanges.value, value: any): void => {
+const handleChannelChanges = (param: keyof ActuatorsParametersConfig, value: any): void => {
   if (!props.selectedCameraUuid) return
 
-  // Check if this value is already selected by another channel
-  const isAlreadySelected = Object.entries(tempChannelChanges.value).some(
-    ([key, channelValue]) => key !== param && channelValue === value
+  // Optional: prevent duplicates (though UI should disable them)
+  const isAlreadySelected = Object.entries(intendedFocusAndZoomParams.value).some(
+    ([key, val]) => key !== param && val === value
   )
 
   if (isAlreadySelected && value !== null) {
-    console.warn(`Channel ${value} is already selected for another function`)
-    // Don't update if duplicate
+    console.warn(`Channel ${value} is already in use`)
     return
   }
 
-  tempChannelChanges.value[param] = value                                 
-  hasUnsavedChannelChanges.value = (
-    (focusAndZoomParams.value)[param] !== value                    
-  ) || Object.entries(tempChannelChanges.value).some(                    
-    ([k, v]) =>
-      (focusAndZoomParams.value)[k as keyof ActuatorsParametersConfig] !== v,
-  )
+  intendedFocusAndZoomParams.value[param] = value
 }
 
 
@@ -952,7 +1436,12 @@ const getVideoParameters = (update: boolean) => {
         update_video_parameter_values(settings)
       }
     })
-    .catch((error) => console.error(`Error sending getVencConf request:`, error.message))
+    .catch((error) => {
+      const message = 'Error getting video parameters'
+      console.log(message, error.message)
+      showWarningToast(message, error)
+    })
+    
 }
 
 const updateVideoParameters = (partial: Partial<VideoParameterSettings>): void => {
@@ -971,7 +1460,9 @@ const updateVideoParameters = (partial: Partial<VideoParameterSettings>): void =
       update_video_parameter_values(settings)
     })
     .catch((error) => {
-      console.error(`Error sending partial video params '${JSON.stringify(partial)}':`, error.message)
+      const message = `Error sending partial video params '${JSON.stringify(partial)}'`
+      console.log(message, error.message)
+      showWarningToast(message, error)
   })
 }
 
@@ -1042,7 +1533,6 @@ const update_video_parameter_values = (settings: VideoParameterSettings) => {
   }
 }
 
-
 const doRestart = () => {
   if (!props.selectedCameraUuid) {
     return
@@ -1062,12 +1552,11 @@ const doRestart = () => {
     .then((response) => {
       console.log("Got an answer from the restarting request", response.data)
     })
-    .catch((error) =>
-      console.error(
-        `Error sending restart':`,
-        error.message
-      )
-    )
+    .catch((error) => {
+      const message = 'Error sending restart'
+      console.log(message, error.message)
+      showErrorDialog(message, error)
+    })
     .finally(() => {
       isLoading.value = false
     })
@@ -1102,7 +1591,7 @@ const saveVideoDataAndRestart = async (): Promise<void> => {
 }
 
 const saveHardwareSetup = async (): Promise<void> => {
-  if (!props.selectedCameraUuid) return
+  if (!props.selectedCameraUuid || !defaultFocusAndZoomParams.value.camera_id || !intendedFocusAndZoomParams.value) return
 
   if (!isHardwareSetupComplete.value) {
     console.error('All channel selections are required')
@@ -1111,18 +1600,16 @@ const saveHardwareSetup = async (): Promise<void> => {
 
   isLoading.value = true
   
+  let payloadParams: ActuatorsParametersConfig
+  payloadParams = { ...defaultFocusAndZoomParams.value }
+  if (showAdvancedHardware.value) {
+    payloadParams = { ...intendedFocusAndZoomParams.value }
+  }
+
   const payload: ActuatorsControl = {
     camera_uuid: props.selectedCameraUuid,
     action: "setActuatorsConfig",
-    json: { 
-      parameters: {
-        focus_channel: tempChannelChanges.value.focus_channel,
-        zoom_channel: tempChannelChanges.value.zoom_channel,
-        tilt_channel: tempChannelChanges.value.tilt_channel,
-        script_channel: tempChannelChanges.value.script_channel,
-        tilt_channel_reversed: tempChannelChanges.value.tilt_channel_reversed,
-      } as ActuatorsParametersConfig
-    } as ActuatorsConfig
+    json: { parameters: payloadParams } as ActuatorsConfig
   }
 
   console.log('Saving hardware setup:', payload)
@@ -1134,62 +1621,38 @@ const saveHardwareSetup = async (): Promise<void> => {
 
       const newParams = (response.data as ActuatorsConfig)?.parameters
       if (newParams) {
-        focusAndZoomParams.value = { ...newParams }
-
-        hasUnsavedChannelChanges.value = false
+        currentFocusAndZoomParams.value = { ...newParams }
+        intendedFocusAndZoomParams.value = { ...newParams }
       }
     })
-    .catch((error) =>
-      console.error(
-        `Error saving hardware setup':`,
-        error.message
-      )
-    )
+    .catch((error) => {
+      const message = 'Error saving hardware setup'
+      console.log(message, error.message)
+      showErrorDialog(message, error)
+    })
     .finally(() => {
       isLoading.value = false
     })
 }
 
-onMounted(() => {
-  getInitialCameraStates()
-})
-
-const getInitialCameraStates = () => {
+const getCameraStates = () => {
+  getActuatorsDefaultConfig()
   getActuatorsConfig()
   getActuatorsState()
   getVideoParameters(true)
 }
 
-defineExpose({ getInitialCameraStates })
+defineExpose({ getCameraStates: getCameraStates })
 
 watch(
   () => props.selectedCameraUuid,
   async (newValue) => {
     if (newValue) {
-      getInitialCameraStates()
+      getCameraStates()
     }
   }
 )
 
-watch(
-  () => selectedVideoResolution.value,
-  (newRes) => {
-    if (!newRes) return
-    const key = `${newRes.width}x${newRes.height}`
-    const allowed = resolutionsToBitrate[key]
-    if (!allowed?.length) {
-      selectedVideoBitrate.value = null
-      tempVideoChanges.value.bitrate = null
-      return
-    }
-    if (!selectedVideoBitrate.value || !allowed.includes(selectedVideoBitrate.value)) {
-      selectedVideoBitrate.value = allowed[0]
-      tempVideoChanges.value.bitrate = allowed[0]
-    }
-  }
-)
-
-// keep bitrate options in sync with resolution changes
 watch(
   () => selectedVideoResolution.value,
   (newRes) => {
@@ -1206,4 +1669,15 @@ watch(
     }
   }
 )
+
+watch(warningToastMessage, (newVal) => {
+  if (newVal) {
+    setTimeout(() => {
+      warningToastMessage.value = null
+    }, 5000)
+  }
+})
+
+new OneMoreTime({ delay: 1000, errorDelay: 5000, autostart: true, disposeWith: this }, getCameraStates);
+
 </script>

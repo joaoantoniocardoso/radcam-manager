@@ -149,7 +149,7 @@ impl ParamType {
 impl Parameter {
     pub fn try_new(data: &PARAM_VALUE_DATA, encoding: ParamEncodingType) -> Result<Self> {
         Ok(Self {
-            name: Self::param_id_to_name(data.param_id),
+            name: data.param_id.to_str()?.to_string(),
             value: ParamType::decode(data, encoding)?,
         })
     }
@@ -171,23 +171,6 @@ impl Parameter {
             ParamType::REAL32(_) => MavParamType::MAV_PARAM_TYPE_REAL32,
             ParamType::REAL64(_) => MavParamType::MAV_PARAM_TYPE_REAL64,
         }
-    }
-
-    pub fn param_id(&self) -> [u8; 16] {
-        Self::param_name_to_id(&self.name)
-    }
-
-    pub fn param_id_to_name(id: [u8; 16]) -> String {
-        let len = id.iter().position(|&b| b == 0).unwrap_or(16);
-        String::from_utf8_lossy(&id[..len]).to_string()
-    }
-
-    pub fn param_name_to_id(name: &str) -> [u8; 16] {
-        let mut buffer = [0u8; 16];
-        let bytes = name.as_bytes();
-        let len = bytes.len().min(16);
-        buffer[..len].copy_from_slice(&bytes[..len]);
-        buffer
     }
 }
 
@@ -259,15 +242,15 @@ impl Default for ActuatorsParameters {
 
             // Tilt - controlled by the user
             tilt_channel: api::ServoChannel::SERVO16,
-            tilt_channel_min: 750,
+            tilt_channel_min: 865,
             tilt_channel_trim: 1500,
             tilt_channel_max: 2250,
             tilt_channel_reversed: false,
 
             // Mount
             tilt_mnt_type: api::MountType::Servo,
-            tilt_mnt_pitch_min: -90,
-            tilt_mnt_pitch_max: 90,
+            tilt_mnt_pitch_min: -70,
+            tilt_mnt_pitch_max: 70,
         }
     }
 }

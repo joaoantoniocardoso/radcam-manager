@@ -76,7 +76,7 @@
             ref="cameraControls"
             :selected-camera-uuid="selectedCameraUUID"
             :backend-api="backendAPI"
-            :disabled="false"
+            :disabled="selectedCameraUUID == null"
             :cockpit-mode="isCockpitMode"
           />
         </div>
@@ -144,9 +144,9 @@ const tab = ref(null)
 // const backendAPI = ref(`http://192.168.2.2:<radcam-extension-port>/v1`) // For local frontend development:
 const backendAPI = ref('v1')
 const cameras = ref<Camera[]>([])
-const selectedCameraUUID = useRouteQuery<string | null>('uuid', null)
+const selectedCameraUUID = ref<string | null>(null)
 
-const desiredCameraUuid = ref<string | null>(null)
+const desiredCameraUuid = useRouteQuery<string | null>('uuid', null)
 
 const theme = ref<'light' | 'dark'>('dark')
 const configMode = ref<'basic' | 'advanced'>('basic')
@@ -227,7 +227,7 @@ const isCamera = (data: unknown): data is Omit<Camera, 'uuid'> => {
 }
 
 const refreshCameraStates = () => {
-  cameraControls.value?.getInitialCameraStates()
+  cameraControls.value?.getCameraStates()
 }
 
 const updateLuaScript = (): void => {
