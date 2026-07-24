@@ -326,6 +326,42 @@ impl Manager {
         script_channel
     );
 
+    pub async fn check_script_status(&self, camera_uuid: &Uuid) -> Result<ScriptStatus> {
+        let camera_actuators = self
+            .settings
+            .actuators
+            .get(camera_uuid)
+            .context("Camera's actuators not configured")?;
+        let expected = generate_lua_script(camera_actuators)?;
+        let path = std::path::Path::new(&self.autopilot_scripts_file);
+
+        match tokio::fs::read_to_string(path).await {
+            Ok(existing) if existing == expected => Ok(ScriptStatus::UpToDate),
+            Ok(_) => Ok(ScriptStatus::OutOfDate),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(ScriptStatus::Missing),
+            Err(error) => Err(error.into()),
+        }
+    }
+
+    pub async fn list_notifications(&self, camera_uuid: &Uuid) -> Vec<api::Notification> {
+        if !self.settings.actuators.contains_key(camera_uuid) {
+            return vec![api::Notification::hardware_not_configured()];
+        }
+
+        let mut notifications = vec![];
+
+        match self.check_script_status(camera_uuid).await {
+            Ok(ScriptStatus::Missing) => notifications.push(api::Notification::script_missing()),
+            Ok(ScriptStatus::OutOfDate) => {
+                notifications.push(api::Notification::script_out_of_date())
+            }
+            Ok(ScriptStatus::UpToDate) => {}
+            Err(error) => warn!("Failed checking lua script status: {error:#?}"),
+        }
+
+        notifications
+    }
+
     pub async fn check_focus_script_health(&mut self, camera_uuid: &Uuid) {
         let Some(actuators) = self.settings.actuators.get(camera_uuid) else {
             return;
@@ -363,6 +399,13 @@ pub(crate) struct ScriptHealthTracker {
     last_input_raw: Option<u16>,
     last_output_raw: Option<u16>,
     stale_count: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScriptStatus {
+    Missing,
+    OutOfDate,
+    UpToDate,
 }
 
 impl ScriptHealthTracker {

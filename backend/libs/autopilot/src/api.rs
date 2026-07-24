@@ -228,3 +228,52 @@ pub struct FocusZoomPoint {
     pub zoom: u32,
     pub focus: u32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Notification {
+    pub id: String,
+    pub message: String,
+    pub action: NotificationAction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NotificationAction {
+    #[serde(rename = "type")]
+    pub action_type: String,
+    pub label: String,
+}
+
+impl Notification {
+    pub fn hardware_not_configured() -> Self {
+        Self {
+            id: "hardware_not_configured".into(),
+            message: "Your camera actuators are not configured yet.".into(),
+            action: NotificationAction {
+                action_type: "goToSetup".into(),
+                label: "Go to Setup".into(),
+            },
+        }
+    }
+
+    pub fn script_missing() -> Self {
+        Self {
+            id: "script_missing".into(),
+            message: "The RadCam Lua script is missing from the autopilot.".into(),
+            action: NotificationAction {
+                action_type: "uploadScript".into(),
+                label: "Upload Script".into(),
+            },
+        }
+    }
+
+    pub fn script_out_of_date() -> Self {
+        Self {
+            id: "script_out_of_date".into(),
+            message: "The RadCam Lua script is out of date.".into(),
+            action: NotificationAction {
+                action_type: "updateScript".into(),
+                label: "Update Script".into(),
+            },
+        }
+    }
+}

@@ -13,6 +13,7 @@ pub mod camera;
 pub mod cockpit;
 pub mod info;
 pub mod log;
+pub mod notifications;
 pub mod settings;
 
 #[instrument(level = "trace")]
@@ -21,6 +22,7 @@ pub fn router() -> Router {
         .nest("/camera", camera::router())
         .nest("/log", log::router())
         .nest("/info", info::router())
+        .nest("/notifications", notifications::router())
         .nest("/settings", settings::router())
         .nest("/autopilot", autopilot::router())
         .route("/service/restart", post(restart))

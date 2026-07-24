@@ -315,6 +315,15 @@ pub async fn clear_saved_settings() -> Result<()> {
     Ok(())
 }
 
+#[instrument(level = "debug")]
+pub async fn notifications(camera_uuid: &Uuid) -> Vec<api::Notification> {
+    let Some(manager) = MANAGER.get() else {
+        return vec![];
+    };
+
+    manager.read().await.list_notifications(camera_uuid).await
+}
+
 pub(super) fn get_output_raw_from_channel(
     data: &SERVO_OUTPUT_RAW_DATA,
     channel: ServoChannel,
