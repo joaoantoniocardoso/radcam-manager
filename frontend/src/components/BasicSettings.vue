@@ -630,6 +630,10 @@
     </ExpansiblePanel>
   </div>
   
+  <NotificationToast
+    :notifications="visibleNotifications"
+    @action="handleNotificationAction"
+  />
   <WelcomeDialog
     :show="(!isConfigured) && showWelcomeDialog"
     @close="showWelcomeDialog = false"
@@ -657,6 +661,7 @@ import { VideoChannelValue, type BaseParameterSetting, type VideoParameterSettin
 import axios from 'axios'
 import type { ActuatorsConfig, ActuatorsControl, ActuatorsParametersConfig, ActuatorsState, CameraID, MountType, ScriptFunction, ServoChannel } from '@/bindings/autopilot'
 import ErrorDialog from './ErrorDialog.vue'
+import NotificationToast, { type AppNotification, type NotificationActionType } from './NotificationToast.vue'
 import WelcomeDialog from './WelcomeDialog.vue'
 import { OneMoreTime } from '@/utils/oneMoreTime'
 import { formatRequestError } from '@/utils/formatRequestError'
@@ -783,6 +788,15 @@ const isLoading = ref<boolean>(false)
 const loadingMessage = ref('Applying settings…')
 const errorDialogMessage = ref<string | null>(null)
 const warningToastMessage = ref<string | null>(null)
+const notifications = ref<AppNotification[]>([])
+
+const visibleNotifications = computed(() => {
+  if (!isConfigured.value && showWelcomeDialog.value) {
+    return notifications.value.filter((notification) => notification.id !== 'hardware_not_configured')
+  }
+
+  return notifications.value
+})
 const showAdvancedHardware = ref(false)
 const intendedFocusAndZoomParams = ref<ActuatorsParametersConfig>({
   camera_id: null,
@@ -1049,15 +1063,47 @@ const getActuatorsConfig = () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const checkIfConfigured = (error: any) => {
+  if (!isConfigured.value) return false
+
   const details = formatRequestError(error)
 
-    if (typeof details === 'string' && details.toLowerCase().includes('actuators not configured')) {
-      isConfigured.value = false
-    } else {
-      isConfigured.value = true
-    }
+  if (typeof details === 'string' && details.toLowerCase().includes('actuators not configured')) {
+    isConfigured.value = false
+  }
 
-    return isConfigured.value
+  return isConfigured.value
+}
+
+const getNotifications = (): void => {
+  if (!props.selectedCameraUuid) {
+    notifications.value = []
+    isConfigured.value = true
+    return
+  }
+
+  axios
+    .get<{ notifications: AppNotification[] }>(`${props.backendApi}/notifications`, {
+      params: { camera_uuid: props.selectedCameraUuid },
+    })
+    .then((response) => {
+      notifications.value = response.data.notifications
+      isConfigured.value = !notifications.value.some((notification) => notification.id === 'hardware_not_configured')
+    })
+    .catch((error) => {
+      console.warn('Error getting notifications:', error.message)
+    })
+}
+
+const handleNotificationAction = (actionType: NotificationActionType): void => {
+  switch (actionType) {
+    case 'goToSetup':
+      showWelcomeDialog.value = true
+      break
+    case 'uploadScript':
+    case 'updateScript':
+      updateLuaScript()
+      break
+  }
 }
 
 const getActuatorsDefaultConfig = () => {
@@ -1155,7 +1201,6 @@ const getActuatorsState = () => {
         }
       })
       console.log(state)
-      isConfigured.value = true
     })
     .catch((error) => {
       const message = 'Error getting actuators state'
@@ -1534,6 +1579,7 @@ const updateLuaScript = (): void => {
     })
     .then((response) => {
       console.log('Lua script download initiated:', response.data)
+      getNotifications()
       endMinLoading(isLoading, startedAt)
     })
     .catch((error) => {
@@ -1600,6 +1646,7 @@ const saveHardwareSetup = async (): Promise<void> => {
         currentFocusAndZoomParams.value = { ...newParams }
         intendedFocusAndZoomParams.value = { ...newParams }
       }
+      getNotifications()
     })
     .catch((error) => {
       const message = 'Error saving hardware setup'
@@ -1631,6 +1678,7 @@ const resetToRecommendedDefaults = async (): Promise<void> => {
         currentFocusAndZoomParams.value = { ...newParams }
         intendedFocusAndZoomParams.value = { ...newParams }
       }
+      getNotifications()
     })
     .catch((error) => {
       const message = 'Failed to apply default hardware setup'
@@ -1643,6 +1691,7 @@ const resetToRecommendedDefaults = async (): Promise<void> => {
 }
 
 const getCameraStates = () => {
+  getNotifications()
   getActuatorsDefaultConfig()
   getActuatorsConfig()
   getActuatorsState()
