@@ -1,6 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@bluerobotics/bluevue/bluevue.css";
+
+/* Tailwind does not look inside node_modules on its own, and without this the utility classes
+   BlueVue's components are written in are never generated. */
+@source "../../node_modules/@bluerobotics/bluevue/dist";
+
+/* A heavier frosting than .bluevue-panel's own, over a lighter backdrop: the status dialogs stand
+   in front of the camera scene, and the kit's defaults hide too much of it. */
+.glass-dialog .bluevue-panel {
+  background-color: #1e1e1e8f;
+  backdrop-filter: blur(20px);
+}
+
+.glass-dialog::backdrop {
+  background: #000000a6;
+  backdrop-filter: blur(4px);
+}
 
 @layer base {
   :root {
