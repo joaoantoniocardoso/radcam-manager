@@ -197,7 +197,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import { useRouteQuery } from '@vueuse/router'
 
 import type { Camera } from '@/bindings/mcm_client'
@@ -541,6 +542,27 @@ const isCockpitMode = useRouteQuery<string, boolean>('cockpit_mode', 'false', {
     get: (v: string) => v === 'true',
     set: (v: boolean) => String(v),
   },
+})
+
+// Cockpit gives an extension iframe a viewport of the Cockpit window's width times 0.4, whatever
+// size the widget is dragged to, which is around 420px on a first-run window and lays this
+// interface out as if it were a phone. Pinning the viewport to the width the interface is drawn
+// for keeps one set of proportions at every window and widget size.
+const COCKPIT_DESIGN_WIDTH = 800
+
+const { width: viewportWidth, height: viewportHeight } = useWindowSize()
+
+// zoom rather than a transform, so the scaling reaches the dialogs and popovers BlueVue puts in
+// the top layer, which an ancestor transform leaves at native size.
+watchEffect(() => {
+  const scale = isCockpitMode.value ? viewportWidth.value / COCKPIT_DESIGN_WIDTH : 1
+  const style = document.documentElement.style
+  style.zoom = isCockpitMode.value ? String(scale) : ''
+  // vh and vw measure the real viewport, which the zoom above then shrinks along with everything
+  // else, so anything capped in viewport units lands at that fraction of the fraction. These carry
+  // the viewport in the units the zoomed layout is actually drawn in.
+  style.setProperty('--viewport-width', `${viewportWidth.value / scale}px`)
+  style.setProperty('--viewport-height', `${viewportHeight.value / scale}px`)
 })
 
 const configButtons = [
@@ -979,6 +1001,9 @@ watch(warningToastMessage, (message, _previous, onCleanup) => {
 })
 
 onUnmounted(() => {
+  document.documentElement.style.zoom = ''
+  document.documentElement.style.removeProperty('--viewport-width')
+  document.documentElement.style.removeProperty('--viewport-height')
   stopHealthProblemsNowTick()
   if (connectionPhaseTimer != null) {
     clearTimeout(connectionPhaseTimer)
